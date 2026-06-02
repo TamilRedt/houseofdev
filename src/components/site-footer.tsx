@@ -24,10 +24,16 @@ export function SiteFooter() {
                 <MapPin className="h-4 w-4 text-emerald-400" /> Hosur, Bangalore, and remote across India
               </p>
               <p className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-emerald-400" /> hello@houseofdev.com
+                <Mail className="h-4 w-4 text-emerald-400" /> 
+                <a href="mailto:arasanredt@gmail.com" className="hover:text-white transition">
+                  arasanredt@gmail.com
+                </a>
               </p>
               <p className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-emerald-400" /> Consultation by appointment
+                <Phone className="h-4 w-4 text-emerald-400" /> 
+                <a href="tel:+918838401597" className="hover:text-white transition">
+                  +91 88384 01597 (Consultation by appointment)
+                </a>
               </p>
             </div>
           </div>
@@ -82,4 +88,3 @@ export function SiteFooter() {
     </footer>
   );
 }
-
