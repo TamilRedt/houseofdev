@@ -1,22 +1,28 @@
-import { ClipboardList, Clock3, FileText, MessageCircle, TrendingUp, Umbrella } from "lucide-react";
+import { 
+  BriefcaseBusiness, 
+  Calendar, 
+  Clock, 
+  FileText, 
+  Fingerprint, 
+  Network 
+} from "lucide-react";
 import { Container } from "@/components/container";
 import { PageHero } from "@/components/page-hero";
 import { createMetadata } from "@/lib/seo";
 
-const employeeFeatures = [
-  ["Attendance Tracking", "Daily attendance logs, work mode, shift data, and manager review", Clock3],
-  ["Leave Requests", "Leave applications, approvals, holiday calendars, and policy notes", Umbrella],
-  ["Assigned Projects", "Project ownership, milestones, blockers, and delivery status", ClipboardList],
-  ["Timesheets and Tasks", "Work logs, tasks, priorities, deadlines, and productivity reporting", FileText],
-  ["Documents", "Offer letters, policies, certificates, and employee records", FileText],
-  ["Team Communication", "Project channels, notes, meeting summaries, and handoffs", MessageCircle],
-  ["Performance Tracking", "Goals, feedback, growth metrics, and review history", TrendingUp],
+// Explicitly type the tuple array: [title, description, Icon component]
+const cards: [string, string, React.ComponentType<{ className?: string }>][] = [
+  ["Task Tracking", "View assigned tasks, update project progression, and log development sprints.", BriefcaseBusiness],
+  ["Time Logging", "Submit daily worksheets, manage clock-in events, and log active work sessions.", Clock],
+  ["Leave Management", "Submit time-off requests, view holiday schedules, and track remaining balance.", Calendar],
+  ["Pay Slips", "Access historical payroll receipts, tax breakdowns, and year-end compensation sheets.", FileText],
+  ["Org Directory", "Navigate company hierarchy structural mappings and locate employee profiles.", Network],
+  ["Identity Access", "Manage authorization authentications, SSH profile keys, and system permissions.", Fingerprint]
 ];
 
 export const metadata = createMetadata({
   title: "Employee Portal",
-  description:
-    "HouseOfDev employee portal for attendance, leave, projects, timesheets, tasks, documents, communication, and performance tracking.",
+  description: "Internal workspace for HouseOfDev team operations, task logging, and business systems.",
   path: "/employee-portal",
 });
 
@@ -24,15 +30,15 @@ export default function EmployeePortalPage() {
   return (
     <>
       <PageHero
-        eyebrow="Employee Portal"
-        title="A focused operations workspace for the HouseOfDev team"
-        description="Employee workflows are modeled for attendance, leave, delivery, documentation, communication, and performance visibility."
+        eyebrow="Employee Workspace"
+        title="Internal dashboard portal for your daily operations"
+        description="Access structural resources, log development timelines, review performance schedules, and coordinate team workflows seamlessly."
       />
-      <section className="bg-white py-20">
+      <section className="bg-slate-50 py-20">
         <Container>
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {employeeFeatures.map(([title, description, Icon]) => (
-              <div key={String(title)} className="rounded-lg border border-slate-200 p-6 shadow-sm">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {cards.map(([title, description, Icon]) => (
+              <div key={title} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
                 <Icon className="h-6 w-6 text-emerald-600" />
                 <h2 className="mt-5 text-xl font-semibold text-slate-950">{title}</h2>
                 <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
@@ -44,4 +50,3 @@ export default function EmployeePortalPage() {
     </>
   );
 }
-
