@@ -1,7 +1,8 @@
-# HouseOfDev 
+# HouseOfDev
 
-Premium digital agency website and business management foundation built with Next.js 15, TypeScript, Tailwind CSS, Framer Motion, Supabase, PostgreSQL, AWS SES, React Hook Form, Zod, Server Actions, and Vercel.
-url: houseofdev-mm47yh2hv-tamilredts-projects.vercel.app
+Premium digital agency website and business management foundation built with Next.js 15, TypeScript, Tailwind CSS, Framer Motion, Supabase, PostgreSQL, AWS SES, React Hook Form, Zod, Server Actions.
+
+**Live Demo:** https://houseofdev-mm47yh2hv-tamilredts-projects.vercel.app
 
 ## What Is Included
 
@@ -76,4 +77,3 @@ npm run build
 ## Deployment
 
 See `docs/DEPLOYMENT.md`.
-
