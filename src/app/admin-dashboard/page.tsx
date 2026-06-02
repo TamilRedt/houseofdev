@@ -14,7 +14,8 @@ import { Container } from "@/components/container";
 import { PageHero } from "@/components/page-hero";
 import { createMetadata } from "@/lib/seo";
 
-const controls = [
+// 1. Added explicit type definition so TypeScript knows the difference between string and component
+const controls: [string, React.ComponentType<{ className?: string }>][] = [
   ["Manage Users", UsersRound],
   ["Manage Employees", UsersRound],
   ["Manage Clients", ShieldCheck],
@@ -69,8 +70,9 @@ export default function AdminDashboardPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {controls.map(([title, Icon]) => (
-                <div key={String(title)} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div key={title} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                   <Icon className="h-5 w-5 text-emerald-600" />
+                  {/* 2. Fixed styling and safely render title text string */}
                   <h2 className="mt-4 text-base font-semibold text-slate-950">{title}</h2>
                 </div>
               ))}
@@ -81,4 +83,3 @@ export default function AdminDashboardPage() {
     </>
   );
 }
-
