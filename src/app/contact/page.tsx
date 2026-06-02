@@ -29,7 +29,7 @@ export default function ContactPage() {
               </p>
               <div className="mt-8 space-y-4">
                 <p className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700">
-                  <Mail className="h-5 w-5 text-blue-600" /> hello@houseofdev.com
+                  <Mail className="h-5 w-5 text-blue-600" /> arasanredt@gmail.com
                 </p>
                 <p className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700">
                   <PhoneCall className="h-5 w-5 text-blue-600" /> Discovery calls by appointment
