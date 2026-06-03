@@ -346,6 +346,10 @@ function addError(notices: string[], label: string, error?: { message?: string }
   }
 }
 
+function isMissingAuthSession(error?: { message?: string } | null) {
+  return error?.message?.toLowerCase().includes("auth session missing") || false;
+}
+
 async function loadClientDashboard(db: SupabaseClient, profile: PortalProfile, notices: string[]): Promise<PortalDashboardData> {
   const [projectsResult, invoicesResult, ticketsResult] = await Promise.all([
     db
@@ -630,12 +634,12 @@ export async function getPortalDashboard(kind: PortalKind): Promise<PortalDashbo
     error: userError,
   } = await serverClient.auth.getUser();
 
-  if (userError) {
+  if (userError && !isMissingAuthSession(userError)) {
     notices.push(`Authentication check failed: ${userError.message}`);
   }
 
   if (!user) {
-    notices.push("Sign in to load live portal records. Demo data is shown until an authorized session is available.");
+    notices.push("Sign in with a Supabase Auth user whose profile role is allowed for this portal. Demo data is shown until a valid session is available.");
     return demoDashboard(kind, "signed_out", notices, null);
   }
 

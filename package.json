@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "create:portal-user": "node scripts/create-portal-user.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-sesv2": "^3.1058.0",

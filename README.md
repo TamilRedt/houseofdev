@@ -13,7 +13,7 @@ Premium digital agency website and business management foundation built with Nex
 - Contact and career forms using React Hook Form, Zod validation, Server Actions, Supabase inserts, AWS SES notifications, honeypot spam control, and basic rate limiting.
 - Client portal, employee portal, and admin dashboard routes with Supabase Auth, role checks, live data loading, and demo fallback when credentials are not configured.
 - SEO foundations: dynamic metadata, Open Graph route image, Twitter cards, organization schema, local business schema, sitemap, and robots.txt.
-- Production docs, environment template, and Supabase/PostgreSQL schema.
+- Production docs, environment template, Supabase/PostgreSQL schema, and portal user setup command.
 
 ## Tech Stack
 
@@ -49,6 +49,14 @@ Create `.env.local` using `.env.example`.
 
 Forms work in demo mode without credentials, but submissions are only persisted when Supabase variables are configured. Email notifications are only sent when AWS SES variables are configured. Portal routes show safe demo data until Supabase URL, anon key, and service role key are configured.
 
+Portal credentials live in Supabase Auth, while dashboard access is controlled by `public.profiles.role`. After adding Supabase env vars, create users with:
+
+```bash
+npm run create:portal-user -- --email admin@houseofdev.com --password "StrongPass123!" --role admin --name "HouseOfDev Admin"
+```
+
+See `docs/PORTAL_USERS.md` for client, employee, and admin examples.
+
 ## Folder Structure
 
 ```text
@@ -66,6 +74,7 @@ src/lib                       Data, SEO, validation, Supabase, AWS, portal data,
 database/schema.sql           Supabase/PostgreSQL schema and RLS starter
 docs/DEPLOYMENT.md            Vercel/Supabase/AWS deployment guide
 docs/PRODUCTION_SETUP.md      Production hardening checklist
+docs/PORTAL_USERS.md          Supabase Auth credential setup
 ```
 
 ## Verification

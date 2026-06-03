@@ -27,6 +27,8 @@ Recommended flow:
 4. Re-check authorization in Server Components, Server Actions, and Route Handlers.
 5. Avoid relying only on middleware for access control.
 
+Credentials are created in Supabase Auth. The website reads `public.profiles.role` to decide portal access. Use `npm run create:portal-user -- --email user@example.com --password "StrongPass123!" --role admin --name "Admin User"` from this repo, or create the user manually in Supabase and update the matching `profiles` row.
+
 Implemented portal access:
 
 - `/portal`: `individual_client`, `business_client`, `admin`, and `super_admin`.
