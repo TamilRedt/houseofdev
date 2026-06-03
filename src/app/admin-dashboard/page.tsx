@@ -20,8 +20,13 @@ function getAuthError(params?: Record<string, string | string[] | undefined>) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function getAuthNotice(params?: Record<string, string | string[] | undefined>) {
+  const value = params?.portal_notice;
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default async function AdminDashboardPage({ searchParams }: PageProps) {
   const [dashboard, params] = await Promise.all([getPortalDashboard("admin"), searchParams]);
 
-  return <PortalDashboard dashboard={dashboard} authError={getAuthError(params)} />;
+  return <PortalDashboard dashboard={dashboard} authError={getAuthError(params)} authNotice={getAuthNotice(params)} />;
 }

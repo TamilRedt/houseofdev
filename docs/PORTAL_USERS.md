@@ -2,15 +2,31 @@
 
 The portal does not keep user passwords in the website code. Credentials live in Supabase Auth, and portal permissions live in the `public.profiles` table.
 
+Signed-out visitors do not see client, employee, or admin dashboard data. Every portal route shows the same access screen with sign-in, password reset, and request-access options.
+
 ## What The Sign-In Message Means
 
-`Auth session missing` means the browser does not have a Supabase login session cookie yet. It is the normal signed-out state. After a valid Supabase Auth user signs in, the app reads that user's `public.profiles.role` and loads live records for the matching portal.
+`Auth session missing` means the browser does not have a Supabase login session cookie yet. It is the normal signed-out state. The app suppresses that technical message and asks the visitor to sign in.
+
+After a valid Supabase Auth user signs in, the app reads that user's `public.profiles.role` and opens the matching portal automatically.
 
 ## Role Access
 
 - `individual_client` and `business_client`: `/portal`
 - `employee`: `/employee-portal`
 - `admin` and `super_admin`: `/admin-dashboard`, `/employee-portal`, and `/portal`
+
+## Request Before Credentials
+
+Do not create portal credentials for every visitor. If a visitor does not have an account, they should use the portal access request form or the contact page. That creates a normal `contact_requests` lead with `source = portal-access`.
+
+Recommended flow:
+
+1. Visitor requests access with name, phone, email, account type, and message.
+2. Team confirms the person by call or message.
+3. Team creates credentials in Supabase Auth.
+4. Team assigns the correct `public.profiles.role`.
+5. User signs in and is routed to the right portal.
 
 ## Create Credentials From This Repo
 
@@ -48,6 +64,10 @@ npm run create:portal-user -- --email admin@houseofdev.com --generate-password -
 ```
 
 The command creates or updates the Supabase Auth login and upserts the matching `public.profiles` row. Store the password securely; Supabase stores only the hashed password.
+
+## Password Reset
+
+The access screen includes a password reset form. Supabase sends the reset email, the link returns to `/auth/callback`, and the user sets a new password at `/update-password`.
 
 ## Create Credentials Manually In Supabase
 

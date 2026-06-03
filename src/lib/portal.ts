@@ -92,8 +92,20 @@ const roleAccess: Record<PortalKind, UserRole[]> = {
   admin: ["admin", "super_admin"],
 };
 
+const defaultPortalByRole: Record<UserRole, PortalKind> = {
+  super_admin: "admin",
+  admin: "admin",
+  employee: "employee",
+  business_client: "client",
+  individual_client: "client",
+};
+
 export function getPortalRoute(kind: PortalKind) {
   return portalCopy[kind].route;
+}
+
+export function getDefaultPortalRouteForRole(role: UserRole) {
+  return getPortalRoute(defaultPortalByRole[role]);
 }
 
 export function getPortalRoleLabel(role: UserRole) {
@@ -178,6 +190,24 @@ function sampleProfile(kind: PortalKind): PortalProfile {
     email: "client@example.com",
     role: "business_client",
     companyName: "Demo Business",
+  };
+}
+
+function accessDashboard(kind: PortalKind, mode: PortalMode, notices: string[], profile?: PortalProfile | null): PortalDashboardData {
+  const copy = portalCopy[kind];
+
+  return {
+    kind,
+    mode,
+    backendConfigured: isPortalBackendConfigured(),
+    authConfigured: isSupabasePublicConfigured(),
+    title: copy.title,
+    subtitle: copy.subtitle,
+    eyebrow: copy.eyebrow,
+    profile: profile || null,
+    stats: [],
+    tables: [],
+    notices,
   };
 }
 
@@ -617,16 +647,16 @@ export async function getPortalDashboard(kind: PortalKind): Promise<PortalDashbo
 
   if (!authConfigured || !isSupabaseAdminConfigured()) {
     notices.push(
-      "Supabase backend is not fully configured. Add NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY in Vercel to switch from demo data to live records.",
+      "Secure account access is not fully configured yet. Book a free consultation or ask the HouseOfDev team to activate your account.",
     );
-    return demoDashboard(kind, "demo", notices);
+    return accessDashboard(kind, "demo", notices);
   }
 
   const serverClient = await getSupabaseServerClient();
 
   if (!serverClient) {
-    notices.push("Supabase Auth is unavailable in this runtime.");
-    return demoDashboard(kind, "error", notices);
+    notices.push("Secure login is unavailable in this runtime. Please request access and the team will contact you.");
+    return accessDashboard(kind, "error", notices);
   }
 
   const {
@@ -639,8 +669,8 @@ export async function getPortalDashboard(kind: PortalKind): Promise<PortalDashbo
   }
 
   if (!user) {
-    notices.push("Sign in with a Supabase Auth user whose profile role is allowed for this portal. Demo data is shown until a valid session is available.");
-    return demoDashboard(kind, "signed_out", notices, null);
+    notices.push("Sign in with your HouseOfDev account. If you do not have one yet, request access and book a free consultation.");
+    return accessDashboard(kind, "signed_out", notices, null);
   }
 
   const db = getSupabaseAdmin() || serverClient;
@@ -650,7 +680,7 @@ export async function getPortalDashboard(kind: PortalKind): Promise<PortalDashbo
     notices.push(
       `${getPortalRoleLabel(profile.role)} accounts cannot access ${getPortalTitle(kind)}. Use the correct portal or ask an admin to update the profile role.`,
     );
-    return demoDashboard(kind, "unauthorized", notices, profile);
+    return accessDashboard(kind, "unauthorized", notices, profile);
   }
 
   try {
@@ -666,6 +696,6 @@ export async function getPortalDashboard(kind: PortalKind): Promise<PortalDashbo
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown portal data error.";
     notices.push(`Portal data failed to load: ${message}`);
-    return demoDashboard(kind, "error", notices, profile);
+    return accessDashboard(kind, "error", notices, profile);
   }
 }

@@ -15,7 +15,7 @@ Keep `SUPABASE_SERVICE_ROLE_KEY` server-only. Never expose it to the browser.
 
 The portal routes need both the public auth variables and the service role key. Run the latest `database/schema.sql` for a new database. If the database already exists, run `database/portal-auth-migration.sql` to refresh Auth profiles, role checks, and portal policies without recreating every table.
 
-Portal credentials are created in Supabase Auth and mapped through `public.profiles.role`. See `docs/PORTAL_USERS.md`.
+Portal credentials are created in Supabase Auth and mapped through `public.profiles.role`. Signed-out visitors see a shared access screen, not demo dashboard data. See `docs/PORTAL_USERS.md`.
 
 ## 2. AWS SES
 

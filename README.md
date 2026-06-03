@@ -49,7 +49,7 @@ Create `.env.local` using `.env.example`.
 
 Forms work in demo mode without credentials, but submissions are only persisted when Supabase variables are configured. Email notifications are only sent when AWS SES variables are configured. Portal routes show safe demo data until Supabase URL, anon key, and service role key are configured.
 
-Portal credentials live in Supabase Auth, while dashboard access is controlled by `public.profiles.role`. After adding Supabase env vars, create users with:
+Portal credentials live in Supabase Auth, while dashboard access is controlled by `public.profiles.role`. Signed-out visitors see only a shared access screen with sign-in, password reset, and request-access forms. After adding Supabase env vars and confirming the person by call or message, create users with:
 
 ```bash
 npm run create:portal-user -- --email admin@houseofdev.com --password "StrongPass123!" --role admin --name "HouseOfDev Admin"

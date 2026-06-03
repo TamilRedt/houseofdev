@@ -8,6 +8,7 @@ import { ProjectVisual } from "@/components/project-visual";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SectionHeader } from "@/components/section-header";
 import { StatCounter } from "@/components/stat-counter";
+import { WebsiteShowcaseSlider } from "@/components/website-showcase-slider";
 import { getIcon } from "@/lib/icons";
 import {
   industries,
@@ -72,6 +73,8 @@ export default function Home() {
           ))}
         </Container>
       </section>
+
+      <WebsiteShowcaseSlider />
 
       <section className="premium-gradient py-20">
         <Container>

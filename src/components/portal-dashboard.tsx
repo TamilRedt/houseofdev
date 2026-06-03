@@ -1,11 +1,13 @@
 import { AlertTriangle, BriefcaseBusiness, Building2, LayoutDashboard } from "lucide-react";
 import { Container } from "@/components/container";
+import { PortalAccessGate } from "@/components/portal-access-gate";
 import { PortalAuthPanel } from "@/components/portal-auth-panel";
 import type { PortalDashboardData, PortalKind, PortalTable } from "@/lib/portal";
 
 type PortalDashboardProps = {
   dashboard: PortalDashboardData;
   authError?: string;
+  authNotice?: string;
 };
 
 const portalIcons: Record<PortalKind, typeof Building2> = {
@@ -80,8 +82,12 @@ function DataTable({ table }: { table: PortalTable }) {
   );
 }
 
-export function PortalDashboard({ dashboard, authError }: PortalDashboardProps) {
+export function PortalDashboard({ dashboard, authError, authNotice }: PortalDashboardProps) {
   const Icon = portalIcons[dashboard.kind];
+
+  if (dashboard.mode !== "live") {
+    return <PortalAccessGate dashboard={dashboard} authError={authError} authNotice={authNotice} />;
+  }
 
   return (
     <>
