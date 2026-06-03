@@ -162,6 +162,18 @@ create table if not exists public.portal_access_requests (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.portal_credential_events (
+  id uuid primary key default gen_random_uuid(),
+  auth_user_id uuid references public.profiles(id) on delete set null,
+  created_by uuid references public.profiles(id) on delete set null,
+  email text not null,
+  role public.user_role not null,
+  action text not null default 'created',
+  source_request_id uuid references public.portal_access_requests(id) on delete set null,
+  notes text,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   client_id uuid references public.profiles(id) on delete set null,
@@ -328,6 +340,7 @@ create table if not exists public.employee_xp_events (
 alter table public.profiles enable row level security;
 alter table public.contact_requests enable row level security;
 alter table public.portal_access_requests enable row level security;
+alter table public.portal_credential_events enable row level security;
 alter table public.projects enable row level security;
 alter table public.project_updates enable row level security;
 alter table public.client_accounts enable row level security;
@@ -374,6 +387,16 @@ drop policy if exists "Admins can manage portal access requests" on public.porta
 create policy "Admins can manage portal access requests"
 on public.portal_access_requests for all
 using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "Admins can read portal credential events" on public.portal_credential_events;
+create policy "Admins can read portal credential events"
+on public.portal_credential_events for select
+using (public.is_admin());
+
+drop policy if exists "Admins can insert portal credential events" on public.portal_credential_events;
+create policy "Admins can insert portal credential events"
+on public.portal_credential_events for insert
 with check (public.is_admin());
 
 drop policy if exists "Clients can read own projects" on public.projects;
@@ -590,6 +613,8 @@ with check (public.is_admin());
 create index if not exists contact_requests_status_idx on public.contact_requests(status);
 create index if not exists portal_access_requests_status_idx on public.portal_access_requests(status);
 create index if not exists portal_access_requests_email_idx on public.portal_access_requests(email);
+create index if not exists portal_credential_events_email_idx on public.portal_credential_events(email);
+create index if not exists portal_credential_events_created_by_idx on public.portal_credential_events(created_by);
 create index if not exists projects_client_id_idx on public.projects(client_id);
 create index if not exists project_members_employee_id_idx on public.project_members(employee_id);
 create index if not exists client_credit_ledger_client_id_idx on public.client_credit_ledger(client_id);

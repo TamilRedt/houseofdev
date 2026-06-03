@@ -197,6 +197,18 @@ create table portal_access_requests (
   updated_at timestamptz not null default now()
 );
 
+create table portal_credential_events (
+  id uuid primary key default gen_random_uuid(),
+  auth_user_id uuid references profiles(id) on delete set null,
+  created_by uuid references profiles(id) on delete set null,
+  email text not null,
+  role user_role not null,
+  action text not null default 'created',
+  source_request_id uuid references portal_access_requests(id) on delete set null,
+  notes text,
+  created_at timestamptz not null default now()
+);
+
 create table career_applications (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
@@ -331,6 +343,7 @@ create table audit_logs (
 alter table profiles enable row level security;
 alter table contact_requests enable row level security;
 alter table portal_access_requests enable row level security;
+alter table portal_credential_events enable row level security;
 alter table career_applications enable row level security;
 alter table projects enable row level security;
 alter table project_updates enable row level security;
@@ -566,6 +579,14 @@ on portal_access_requests for all
 using (public.is_admin())
 with check (public.is_admin());
 
+create policy "Admins can read portal credential events"
+on portal_credential_events for select
+using (public.is_admin());
+
+create policy "Admins can insert portal credential events"
+on portal_credential_events for insert
+with check (public.is_admin());
+
 create policy "Admins can manage career applications"
 on career_applications for all
 using (public.is_admin())
@@ -578,6 +599,8 @@ using (public.is_admin());
 create index contact_requests_status_idx on contact_requests(status);
 create index portal_access_requests_status_idx on portal_access_requests(status);
 create index portal_access_requests_email_idx on portal_access_requests(email);
+create index portal_credential_events_email_idx on portal_credential_events(email);
+create index portal_credential_events_created_by_idx on portal_credential_events(created_by);
 create index career_applications_status_idx on career_applications(status);
 create index projects_client_id_idx on projects(client_id);
 create index project_members_employee_id_idx on project_members(employee_id);

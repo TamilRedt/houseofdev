@@ -1,5 +1,11 @@
-import { AlertTriangle, Clock3, Database, LogIn, LogOut, ShieldCheck, UserCircle } from "lucide-react";
-import { recordAttendanceCheckIn, recordAttendanceCheckOut, signInToPortal, signOutFromPortal } from "@/app/portal-actions";
+import { AlertTriangle, Clock3, Database, LogIn, LogOut, ShieldCheck, UserCircle, UserPlus } from "lucide-react";
+import {
+  createPortalCredential,
+  recordAttendanceCheckIn,
+  recordAttendanceCheckOut,
+  signInToPortal,
+  signOutFromPortal,
+} from "@/app/portal-actions";
 import { getPortalRoleLabel, getPortalRoute, type PortalDashboardData } from "@/lib/portal";
 
 type PortalAuthPanelProps = {
@@ -12,6 +18,8 @@ export function PortalAuthPanel({ dashboard, authError }: PortalAuthPanelProps) 
   const showLogin = dashboard.mode === "signed_out";
   const showSignedIn = dashboard.profile && (dashboard.mode === "live" || dashboard.mode === "unauthorized");
   const showAttendance = dashboard.mode === "live" && dashboard.kind === "employee";
+  const showCredentialForm = dashboard.mode === "live" && dashboard.kind === "admin";
+  const canCreateAdmin = dashboard.profile?.role === "super_admin";
 
   return (
     <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-950/5">
@@ -109,6 +117,121 @@ export function PortalAuthPanel({ dashboard, authError }: PortalAuthPanelProps) 
             </button>
           </form>
         </div>
+      ) : null}
+
+      {showCredentialForm ? (
+        <form action={createPortalCredential} className="mt-5 rounded-md border border-blue-200 bg-blue-50 p-4">
+          <div className="flex items-center gap-2">
+            <UserPlus className="h-4 w-4 text-blue-700" />
+            <p className="text-sm font-semibold text-blue-950">Create Portal Credential</p>
+          </div>
+          <div className="mt-4 grid gap-3">
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Full Name</span>
+              <input
+                name="fullName"
+                required
+                autoComplete="name"
+                className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Email</span>
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Phone</span>
+                <input
+                  name="phone"
+                  type="tel"
+                  required
+                  autoComplete="tel"
+                  className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+                />
+              </label>
+            </div>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Temporary Password</span>
+              <input
+                name="password"
+                type="password"
+                required
+                minLength={8}
+                autoComplete="new-password"
+                className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Role</span>
+              <select
+                name="role"
+                defaultValue="business_client"
+                required
+                className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              >
+                <option value="business_client">Business Client</option>
+                <option value="individual_client">Individual Client</option>
+                <option value="employee">Employee</option>
+                {canCreateAdmin ? <option value="admin">Admin</option> : null}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Company</span>
+              <input
+                name="companyName"
+                autoComplete="organization"
+                className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Job Title</span>
+                <input
+                  name="jobTitle"
+                  className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Department</span>
+                <input
+                  name="department"
+                  className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+                />
+              </label>
+            </div>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Credit Limit</span>
+              <input
+                name="creditLimit"
+                type="number"
+                min="0"
+                step="1"
+                inputMode="numeric"
+                className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Admin Notes</span>
+              <textarea
+                name="notes"
+                className="mt-2 min-h-20 w-full resize-y rounded-md border border-blue-200 bg-white px-3 py-2 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              />
+            </label>
+            <button
+              type="submit"
+              className="inline-flex min-h-10 w-full items-center justify-center rounded-md bg-blue-600 px-4 text-sm font-semibold text-white transition hover:bg-slate-950"
+            >
+              Create Credential
+            </button>
+          </div>
+        </form>
       ) : null}
 
       {showLogin ? (

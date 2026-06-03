@@ -11,6 +11,8 @@ const allowedReturnPaths = new Set(["/portal", "/employee-portal", "/admin-dashb
 const accessTypes = new Set(["Client account", "Employee account", "Admin account"]);
 const attendanceModes = new Set(["office", "remote", "hybrid", "field"]);
 const attendanceRoles = new Set<UserRole>(["employee", "admin", "super_admin"]);
+const credentialRoles = new Set<UserRole>(["admin", "employee", "business_client", "individual_client"]);
+const adminRoles = new Set<UserRole>(["admin", "super_admin"]);
 
 function cleanReturnTo(value: FormDataEntryValue | null) {
   const path = String(value || "/portal");
@@ -121,6 +123,22 @@ function getIndiaWorkDate(date = new Date()) {
 function cleanAttendanceMode(value: FormDataEntryValue | null) {
   const mode = String(value || "office").trim().toLowerCase();
   return attendanceModes.has(mode) ? mode : "office";
+}
+
+function cleanCredentialRole(value: FormDataEntryValue | null): UserRole | null {
+  const role = String(value || "").trim() as UserRole;
+  return credentialRoles.has(role) ? role : null;
+}
+
+function parseCreditAmount(value: FormDataEntryValue | null) {
+  const raw = String(value || "").trim();
+
+  if (!raw) {
+    return 0;
+  }
+
+  const amount = Number(raw);
+  return Number.isFinite(amount) && amount > 0 ? amount : 0;
 }
 
 async function storePortalAccessRequest(payload: {
@@ -389,6 +407,152 @@ export async function recordAttendanceCheckOut() {
   }
 
   noticeRedirect(returnTo, "Attendance check-out saved for today.");
+}
+
+export async function createPortalCredential(formData: FormData) {
+  const returnTo = "/admin-dashboard";
+  const limited = await assertRateLimit("portal-create-user");
+
+  if (!limited) {
+    errorRedirect(returnTo, "Too many credential attempts. Please wait a minute and try again.");
+  }
+
+  const { user: adminUser, role: adminRole } = await getSignedInPortalUser(returnTo);
+
+  if (!adminRoles.has(adminRole)) {
+    errorRedirect(returnTo, "Only admin accounts can create portal credentials.");
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    errorRedirect(returnTo, "Supabase service role key is required before admins can create credentials.");
+  }
+
+  const fullName = String(formData.get("fullName") || "").trim();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const phone = String(formData.get("phone") || "").trim();
+  const password = String(formData.get("password") || "");
+  const role = cleanCredentialRole(formData.get("role"));
+  const companyName = String(formData.get("companyName") || "").trim();
+  const jobTitle = String(formData.get("jobTitle") || "").trim();
+  const department = String(formData.get("department") || "").trim();
+  const creditLimit = parseCreditAmount(formData.get("creditLimit"));
+  const notes = String(formData.get("notes") || "").trim();
+  const requestId = String(formData.get("requestId") || "").trim();
+
+  if (fullName.length < 2 || !email.includes("@") || phone.length < 8 || password.length < 8 || !role) {
+    errorRedirect(returnTo, "Enter name, email, phone, password, and a valid account role.");
+  }
+
+  if (role === "admin" && adminRole !== "super_admin") {
+    errorRedirect(returnTo, "Only a super admin can create another admin account.");
+  }
+
+  const createResult = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    phone: phone || undefined,
+    user_metadata: {
+      full_name: fullName,
+      phone,
+      company_name: companyName || undefined,
+      job_title: jobTitle || undefined,
+      department: department || undefined,
+    },
+  });
+
+  if (createResult.error || !createResult.data.user) {
+    errorRedirect(returnTo, createResult.error?.message || "Could not create Supabase Auth user.");
+  }
+
+  const createdUser = createResult.data.user;
+  const profileResult = await supabase.from("profiles").upsert(
+    {
+      id: createdUser.id,
+      full_name: fullName,
+      email,
+      phone,
+      role,
+      company_name: companyName || null,
+      job_title: jobTitle || null,
+      department: department || null,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "id" },
+  );
+
+  if (profileResult.error) {
+    await supabase.auth.admin.deleteUser(createdUser.id);
+    errorRedirect(returnTo, `Auth user was created but profile storage failed. Rolled back login. ${profileResult.error.message}`);
+  }
+
+  if (role === "business_client" || role === "individual_client") {
+    const clientResult = await supabase.from("client_accounts").upsert(
+      {
+        profile_id: createdUser.id,
+        credit_balance: creditLimit,
+        credit_limit: creditLimit,
+        billing_email: email,
+        account_status: "active",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "profile_id" },
+    );
+
+    if (clientResult.error) {
+      errorRedirect(returnTo, `Credential created, but client credit account failed: ${clientResult.error.message}`);
+    }
+
+    if (creditLimit > 0) {
+      await supabase.from("client_credit_ledger").insert({
+        client_id: createdUser.id,
+        credit_change: creditLimit,
+        description: "Opening credit balance",
+        created_by: adminUser.id,
+      });
+    }
+  }
+
+  const sourceRequestId = requestId.length >= 32 ? requestId : null;
+
+  await supabase.from("portal_credential_events").insert({
+    auth_user_id: createdUser.id,
+    created_by: adminUser.id,
+    email,
+    role,
+    source_request_id: sourceRequestId,
+    notes: notes || null,
+  });
+
+  if (sourceRequestId) {
+    await supabase
+      .from("portal_access_requests")
+      .update({
+        status: "approved",
+        reviewed_by: adminUser.id,
+        reviewed_at: new Date().toISOString(),
+        admin_notes: notes || "Credential created.",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", sourceRequestId);
+  } else {
+    await supabase
+      .from("portal_access_requests")
+      .update({
+        status: "approved",
+        reviewed_by: adminUser.id,
+        reviewed_at: new Date().toISOString(),
+        admin_notes: notes || "Credential created.",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("email", email)
+      .eq("status", "new");
+  }
+
+  noticeRedirect(returnTo, `Credential created for ${email}. Share the temporary password securely.`);
 }
 
 export async function sendPortalPasswordReset(formData: FormData) {

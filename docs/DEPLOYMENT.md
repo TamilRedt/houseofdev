@@ -53,6 +53,7 @@ Run these after deployment:
 - Confirm `/api/health` reports `portalBackendConfigured: true`
 - Sign in to `/portal`, `/employee-portal`, and `/admin-dashboard` with users whose `profiles.role` values match the route
 - Submit a portal access request and confirm a row appears in `portal_access_requests`
+- Sign in as an admin and create a test credential, then confirm rows appear in `profiles` and `portal_credential_events`
 - Sign in as an employee and save a check-in/check-out record in `employee_attendance`
 - Open `/sitemap.xml`
 - Open `/robots.txt`

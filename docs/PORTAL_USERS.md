@@ -24,9 +24,11 @@ Recommended flow:
 
 1. Visitor requests access with name, phone, email, account type, and message.
 2. Team confirms the person by call or message.
-3. Team creates credentials in Supabase Auth.
-4. Team assigns the correct `public.profiles.role`.
-5. User signs in and is routed to the right portal.
+3. Admin signs in to `/admin-dashboard`.
+4. Admin creates credentials from the admin dashboard or with the repo script.
+5. The app stores the user details in `public.profiles`.
+6. The app stores client credit details in `client_accounts` when the user is a client.
+7. User signs in and is routed to the right portal.
 
 ## Database Tables
 
@@ -36,6 +38,7 @@ Main portal tables:
 
 - `profiles`: one row per Supabase Auth user, with `role`, phone, company, job title, department, and active status.
 - `portal_access_requests`: account requests from visitors before credentials are created.
+- `portal_credential_events`: admin-only audit trail for credential creation. It never stores passwords.
 - `client_accounts`: client credit balance, credit limit, billing email, and account status.
 - `client_credit_ledger`: credit additions and usage history shown to clients.
 - `projects` and `project_updates`: client project status, progress, budget, credit cost, and updates.
@@ -46,6 +49,20 @@ Main portal tables:
 - `project_reviews`: finished project reviews for employees and projects.
 - `employee_xp_events`: employee EXP points history.
 - `invoices`, `payments`, and `support_tickets`: client billing and support records.
+
+## Create Credentials As Admin
+
+Only an authenticated `admin` or `super_admin` can create portal credentials inside the website. The public request form does not create Supabase Auth users.
+
+Admin dashboard flow:
+
+1. Sign in to `/admin-dashboard`.
+2. Use `Create Portal Credential`.
+3. Enter full name, email, phone, temporary password, role, and optional company/team details.
+4. Share the temporary password securely with the user.
+5. Ask the user to use Forgot Password after first sign-in if they want to set their own password.
+
+The server action checks the signed-in admin role before calling the Supabase Admin API. Passwords are sent to Supabase Auth only; they are not stored in `profiles` or any portal table.
 
 ## Create Credentials From This Repo
 
