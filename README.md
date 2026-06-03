@@ -11,7 +11,7 @@ Premium digital agency website and business management foundation built with Nex
 - Dynamic detail pages for services, industries, solutions, portfolio projects, and blog posts.
 - Blog explorer with search, categories, tags, related posts, and comment-ready UI.
 - Contact and career forms using React Hook Form, Zod validation, Server Actions, Supabase inserts, AWS SES notifications, honeypot spam control, and basic rate limiting.
-- Client portal, employee portal, and admin dashboard routes with Supabase Auth, role checks, live data loading, and demo fallback when credentials are not configured.
+- Client portal, employee portal, and admin dashboard routes with Supabase Auth, role checks, live data loading, request-first account access, client credits, employee attendance, project assignments, reviews, and EXP records.
 - SEO foundations: dynamic metadata, Open Graph route image, Twitter cards, organization schema, local business schema, sitemap, and robots.txt.
 - Production docs, environment template, Supabase/PostgreSQL schema, and portal user setup command.
 
@@ -47,7 +47,7 @@ npm.cmd run dev
 
 Create `.env.local` using `.env.example`.
 
-Forms work in demo mode without credentials, but submissions are only persisted when Supabase variables are configured. Email notifications are only sent when AWS SES variables are configured. Portal routes show safe demo data until Supabase URL, anon key, and service role key are configured.
+Forms work in demo mode without credentials, but submissions are only persisted when Supabase variables are configured. Email notifications are only sent when AWS SES variables are configured. Portal routes do not expose dashboard data to signed-out visitors; they show the shared sign-in, password reset, and request-access screen.
 
 Portal credentials live in Supabase Auth, while dashboard access is controlled by `public.profiles.role`. Signed-out visitors see only a shared access screen with sign-in, password reset, and request-access forms. After adding Supabase env vars and confirming the person by call or message, create users with:
 
@@ -56,6 +56,8 @@ npm run create:portal-user -- --email admin@houseofdev.com --password "StrongPas
 ```
 
 See `docs/PORTAL_USERS.md` for client, employee, and admin examples.
+
+For an existing Supabase database, run `database/portal-system-migration.sql` once to add portal access requests, client credit tables, employee assignments, attendance, project reviews, and EXP tracking.
 
 ## Folder Structure
 
@@ -72,6 +74,7 @@ src/app
 src/components                Reusable UI, forms, navigation, visuals
 src/lib                       Data, SEO, validation, Supabase, AWS, portal data, utilities
 database/schema.sql           Supabase/PostgreSQL schema and RLS starter
+database/portal-system-migration.sql  Idempotent portal database repair/migration
 docs/DEPLOYMENT.md            Vercel/Supabase/AWS deployment guide
 docs/PRODUCTION_SETUP.md      Production hardening checklist
 docs/PORTAL_USERS.md          Supabase Auth credential setup

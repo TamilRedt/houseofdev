@@ -156,6 +156,16 @@ function formatMoney(value: number | string | null | undefined, currency = "INR"
   }).format(amount);
 }
 
+function formatPercent(value: number | string | null | undefined) {
+  const percent = Number(value || 0);
+
+  if (!percent) {
+    return "0%";
+  }
+
+  return `${Math.min(100, Math.max(0, Math.round(percent)))}%`;
+}
+
 function asRows<T>(
   data: T[] | null,
   mapper: (item: T) => string[],
@@ -370,9 +380,24 @@ async function loadProfile(db: SupabaseClient, user: AuthUser): Promise<PortalPr
   };
 }
 
+function isMissingSchemaFeature(error?: { message?: string } | null) {
+  const message = error?.message?.toLowerCase() || "";
+
+  return (
+    message.includes("does not exist") ||
+    message.includes("schema cache") ||
+    message.includes("could not find") ||
+    message.includes("column")
+  );
+}
+
 function addError(notices: string[], label: string, error?: { message?: string } | null) {
   if (error?.message) {
-    notices.push(`${label}: ${error.message}`);
+    notices.push(
+      isMissingSchemaFeature(error)
+        ? `${label} is not fully set up yet. Run database/portal-system-migration.sql in Supabase.`
+        : `${label}: ${error.message}`,
+    );
   }
 }
 
@@ -381,12 +406,33 @@ function isMissingAuthSession(error?: { message?: string } | null) {
 }
 
 async function loadClientDashboard(db: SupabaseClient, profile: PortalProfile, notices: string[]): Promise<PortalDashboardData> {
-  const [projectsResult, invoicesResult, ticketsResult] = await Promise.all([
-    db
+  let projectsResult = await db
+    .from("projects")
+    .select("title, status, budget, credit_cost, progress_percent, due_date, updated_at")
+    .eq("client_id", profile.id)
+    .order("updated_at", { ascending: false })
+    .limit(8);
+
+  if (projectsResult.error && isMissingSchemaFeature(projectsResult.error)) {
+    projectsResult = (await db
       .from("projects")
       .select("title, status, budget, due_date, updated_at")
       .eq("client_id", profile.id)
       .order("updated_at", { ascending: false })
+      .limit(8)) as typeof projectsResult;
+  }
+
+  const [accountResult, creditLedgerResult, invoicesResult, ticketsResult] = await Promise.all([
+    db
+      .from("client_accounts")
+      .select("credit_balance, credit_limit, account_status, updated_at")
+      .eq("profile_id", profile.id)
+      .maybeSingle(),
+    db
+      .from("client_credit_ledger")
+      .select("credit_change, description, created_at")
+      .eq("client_id", profile.id)
+      .order("created_at", { ascending: false })
       .limit(8),
     db
       .from("invoices")
@@ -403,43 +449,55 @@ async function loadClientDashboard(db: SupabaseClient, profile: PortalProfile, n
   ]);
 
   addError(notices, "Projects", projectsResult.error);
+  addError(notices, "Client credits", accountResult.error);
+  addError(notices, "Credit ledger", creditLedgerResult.error);
   addError(notices, "Invoices", invoicesResult.error);
   addError(notices, "Support tickets", ticketsResult.error);
 
   const projects = projectsResult.data || [];
+  const account = accountResult.data || null;
+  const creditLedger = creditLedgerResult.data || [];
   const invoices = invoicesResult.data || [];
   const tickets = ticketsResult.data || [];
   const activeProjects = projects.filter((project) => !["completed", "closed"].includes(String(project.status))).length;
   const openTickets = tickets.filter((ticket) => !["completed", "closed"].includes(String(ticket.status))).length;
   const pendingInvoices = invoices.filter((invoice) => !["paid", "closed"].includes(String(invoice.status)));
   const pendingAmount = pendingInvoices.reduce((sum, invoice) => sum + Number(invoice.amount || 0), 0);
+  const creditBalance = Number(account?.credit_balance || 0);
+  const creditLimit = Number(account?.credit_limit || 0);
 
   return {
     ...demoDashboard("client", "live", notices, profile),
     stats: [
       { label: "Active Projects", value: String(activeProjects), helper: `${projects.length} total linked projects` },
-      { label: "Open Tickets", value: String(openTickets), helper: `${tickets.length} support records` },
+      { label: "Credits Available", value: formatMoney(creditBalance), helper: `${formatMoney(creditLimit)} account limit` },
       { label: "Pending Invoices", value: formatMoney(pendingAmount), helper: `${pendingInvoices.length} awaiting closure` },
-      { label: "Next Due Date", value: formatDate(projects[0]?.due_date), helper: "Nearest visible milestone" },
+      { label: "Open Tickets", value: String(openTickets), helper: `${tickets.length} support records` },
     ],
     tables: [
       {
         title: "Project Roadmap",
-        description: "Live projects linked to your client profile.",
-        columns: ["Project", "Status", "Budget", "Due"],
+        description: "Live project status, progress, and credit usage linked to your client profile.",
+        columns: ["Project", "Status", "Progress", "Credits"],
         rows: asRows(projects, (project) => [
           String(project.title || "-"),
           humanize(project.status),
-          formatMoney(project.budget),
-          formatDate(project.due_date),
+          formatPercent(project.progress_percent),
+          project.credit_cost ? formatMoney(project.credit_cost) : formatMoney(project.budget),
         ]),
         emptyText: "No projects are linked to this profile yet.",
       },
       {
-        title: "Invoices and Support",
-        description: "Live billing and support records linked to your profile.",
+        title: "Credits, Invoices, and Support",
+        description: "Live credit movements, billing status, and support conversations.",
         columns: ["Item", "Status", "Amount/Priority", "Updated"],
         rows: [
+          ...asRows(creditLedger, (entry) => [
+            String(entry.description || "Credit update"),
+            Number(entry.credit_change || 0) >= 0 ? "Credit Added" : "Credit Used",
+            formatMoney(Math.abs(Number(entry.credit_change || 0))),
+            formatDate(entry.created_at),
+          ]),
           ...asRows(invoices, (invoice) => [
             String(invoice.invoice_number || "-"),
             humanize(invoice.status),
@@ -460,13 +518,23 @@ async function loadClientDashboard(db: SupabaseClient, profile: PortalProfile, n
 }
 
 async function loadEmployeeDashboard(db: SupabaseClient, profile: PortalProfile, notices: string[]): Promise<PortalDashboardData> {
-  const [tasksResult, attendanceResult, leaveResult] = await Promise.all([
-    db
+  let tasksResult = await db
+    .from("tasks")
+    .select("title, status, priority, exp_points, due_date, project_id, created_at")
+    .eq("assignee_id", profile.id)
+    .order("created_at", { ascending: false })
+    .limit(8);
+
+  if (tasksResult.error && isMissingSchemaFeature(tasksResult.error)) {
+    tasksResult = (await db
       .from("tasks")
       .select("title, status, due_date, project_id, created_at")
       .eq("assignee_id", profile.id)
       .order("created_at", { ascending: false })
-      .limit(8),
+      .limit(8)) as typeof tasksResult;
+  }
+
+  const [attendanceResult, leaveResult, assignmentsResult, reviewsResult, xpResult] = await Promise.all([
     db
       .from("employee_attendance")
       .select("work_date, check_in, check_out, mode, notes")
@@ -479,42 +547,111 @@ async function loadEmployeeDashboard(db: SupabaseClient, profile: PortalProfile,
       .eq("employee_id", profile.id)
       .order("created_at", { ascending: false })
       .limit(8),
+    db
+      .from("project_members")
+      .select("project_id, role_title, assignment_status, due_date, completed_at, assigned_at")
+      .eq("employee_id", profile.id)
+      .order("assigned_at", { ascending: false })
+      .limit(12),
+    db
+      .from("project_reviews")
+      .select("project_id, rating, review, review_type, created_at")
+      .eq("employee_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(8),
+    db
+      .from("employee_xp_events")
+      .select("points, reason, project_id, created_at")
+      .eq("employee_id", profile.id)
+      .order("created_at", { ascending: false })
+      .limit(12),
   ]);
 
   addError(notices, "Tasks", tasksResult.error);
   addError(notices, "Attendance", attendanceResult.error);
   addError(notices, "Leave requests", leaveResult.error);
+  addError(notices, "Project assignments", assignmentsResult.error);
+  addError(notices, "Project reviews", reviewsResult.error);
+  addError(notices, "EXP records", xpResult.error);
 
   const tasks = tasksResult.data || [];
   const attendance = attendanceResult.data || [];
   const leaveRequests = leaveResult.data || [];
+  const assignments = assignmentsResult.data || [];
+  const reviews = reviewsResult.data || [];
+  const xpEvents = xpResult.data || [];
+  const projectIds = Array.from(
+    new Set(
+      [...tasks.map((task) => task.project_id), ...assignments.map((assignment) => assignment.project_id), ...reviews.map((review) => review.project_id)]
+        .filter(Boolean)
+        .map(String),
+    ),
+  );
+  let projectResult = projectIds.length
+    ? await db
+        .from("projects")
+        .select("id, title, status, due_date, progress_percent")
+        .in("id", projectIds)
+    : { data: [], error: null };
+
+  if (projectResult.error && isMissingSchemaFeature(projectResult.error)) {
+    projectResult = projectIds.length
+      ? ((await db
+          .from("projects")
+          .select("id, title, status, due_date")
+          .in("id", projectIds)) as typeof projectResult)
+      : { data: [], error: null };
+  }
+
+  addError(notices, "Assigned project details", projectResult.error);
+
+  const projectById = new Map((projectResult.data || []).map((project) => [String(project.id), project]));
   const openTasks = tasks.filter((task) => !["done", "completed", "closed"].includes(String(task.status))).length;
   const pendingLeaves = leaveRequests.filter((request) => ["new", "reviewing"].includes(String(request.status))).length;
+  const activeAssignments = assignments.filter((assignment) => !["finished", "completed", "closed"].includes(String(assignment.assignment_status))).length;
+  const finishedAssignments = assignments.filter((assignment) => ["finished", "completed", "closed"].includes(String(assignment.assignment_status))).length;
+  const totalXp = xpEvents.reduce((sum, event) => sum + Number(event.points || 0), 0);
 
   return {
     ...demoDashboard("employee", "live", notices, profile),
     stats: [
-      { label: "Assigned Tasks", value: String(openTasks), helper: `${tasks.length} recent task records` },
+      { label: "EXP Points", value: String(totalXp), helper: `${xpEvents.length} recent EXP records` },
+      { label: "Assigned Projects", value: String(activeAssignments), helper: `${finishedAssignments} finished projects` },
       { label: "Logged Days", value: String(attendance.length), helper: "Recent attendance entries" },
-      { label: "Leave Requests", value: String(pendingLeaves), helper: `${leaveRequests.length} total visible requests` },
-      { label: "Next Due Date", value: formatDate(tasks[0]?.due_date), helper: "Nearest visible assignment" },
+      { label: "Assigned Tasks", value: String(openTasks), helper: `${pendingLeaves} leave requests in review` },
     ],
     tables: [
       {
+        title: "Assigned and Upcoming Projects",
+        description: "Projects assigned to your employee profile, including upcoming and finished work.",
+        columns: ["Project", "Role", "Stage", "Due/Done"],
+        rows: asRows(assignments, (assignment) => {
+          const project = projectById.get(String(assignment.project_id));
+
+          return [
+            String(project?.title || assignment.project_id || "-"),
+            String(assignment.role_title || "Team Member"),
+            humanize(assignment.assignment_status),
+            formatDate(assignment.completed_at || assignment.due_date || project?.due_date),
+          ];
+        }),
+        emptyText: "No project assignments are linked to this profile yet.",
+      },
+      {
         title: "Task Queue",
         description: "Live tasks assigned to your employee profile.",
-        columns: ["Task", "Project", "Status", "Due"],
+        columns: ["Task", "Project", "Status", "EXP"],
         rows: asRows(tasks, (task) => [
           String(task.title || "-"),
-          task.project_id ? String(task.project_id).slice(0, 8) : "-",
+          task.project_id ? String(projectById.get(String(task.project_id))?.title || String(task.project_id).slice(0, 8)) : "-",
           humanize(task.status),
-          formatDate(task.due_date),
+          task.exp_points ? `${task.exp_points} XP` : formatDate(task.due_date),
         ]),
         emptyText: "No tasks are assigned yet.",
       },
       {
-        title: "Attendance and Leave",
-        description: "Live attendance entries and leave requests.",
+        title: "Attendance, Leave, Reviews, and EXP",
+        description: "Live attendance entries, leave requests, finished project reviews, and EXP activity.",
         columns: ["Date", "Type", "Status", "Notes"],
         rows: [
           ...asRows(attendance, (entry) => [
@@ -528,6 +665,18 @@ async function loadEmployeeDashboard(db: SupabaseClient, profile: PortalProfile,
             "Leave",
             humanize(request.status),
             String(request.reason || "-"),
+          ]),
+          ...asRows(reviews, (review) => [
+            formatDate(review.created_at),
+            "Project Review",
+            review.rating ? `${review.rating}/5` : humanize(review.review_type),
+            String(review.review || "-"),
+          ]),
+          ...asRows(xpEvents, (event) => [
+            formatDate(event.created_at),
+            "EXP",
+            `${Number(event.points || 0)} XP`,
+            String(event.reason || "-"),
           ]),
         ],
         emptyText: "No attendance or leave activity yet.",
@@ -544,28 +693,48 @@ async function countRows(db: SupabaseClient, table: string, notices: string[], l
 
 async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, notices: string[]): Promise<PortalDashboardData> {
   const [
+    accessCount,
     contactCount,
     careerCount,
     profileCount,
+    clientAccountCount,
+    assignmentCount,
+    xpCount,
     projectCount,
     invoiceCount,
     paymentCount,
     ticketCount,
+    accessResult,
     contactResult,
+    profileResult,
     careerResult,
     projectResult,
     invoiceResult,
   ] = await Promise.all([
+    countRows(db, "portal_access_requests", notices, "Portal access count"),
     countRows(db, "contact_requests", notices, "Contact count"),
     countRows(db, "career_applications", notices, "Career count"),
     countRows(db, "profiles", notices, "Profile count"),
+    countRows(db, "client_accounts", notices, "Client account count"),
+    countRows(db, "project_members", notices, "Project assignment count"),
+    countRows(db, "employee_xp_events", notices, "EXP count"),
     countRows(db, "projects", notices, "Project count"),
     countRows(db, "invoices", notices, "Invoice count"),
     countRows(db, "payments", notices, "Payment count"),
     countRows(db, "support_tickets", notices, "Ticket count"),
     db
+      .from("portal_access_requests")
+      .select("full_name, company_name, account_type, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    db
       .from("contact_requests")
       .select("full_name, company_name, service_required, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    db
+      .from("profiles")
+      .select("full_name, email, role, company_name, created_at")
       .order("created_at", { ascending: false })
       .limit(6),
     db
@@ -585,7 +754,9 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
       .limit(6),
   ]);
 
+  addError(notices, "Portal access requests", accessResult.error);
   addError(notices, "Recent contacts", contactResult.error);
+  addError(notices, "User profiles", profileResult.error);
   addError(notices, "Recent careers", careerResult.error);
   addError(notices, "Recent projects", projectResult.error);
   addError(notices, "Recent invoices", invoiceResult.error);
@@ -593,29 +764,43 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
   return {
     ...demoDashboard("admin", "live", notices, profile),
     stats: [
-      { label: "Leads", value: String(contactCount), helper: "Contact requests" },
-      { label: "Candidates", value: String(careerCount), helper: "Career applications" },
-      { label: "Projects", value: String(projectCount), helper: `${profileCount} user profiles` },
+      { label: "Access Requests", value: String(accessCount), helper: `${contactCount} contact leads, ${careerCount} career applications` },
+      { label: "Users", value: String(profileCount), helper: `${clientAccountCount} client credit accounts` },
+      { label: "Delivery", value: String(projectCount), helper: `${assignmentCount} employee assignments, ${xpCount} EXP records` },
       { label: "Finance", value: `${invoiceCount}/${paymentCount}`, helper: `${ticketCount} support tickets` },
     ],
     tables: [
       {
-        title: "Latest Contact Requests",
-        description: "Live sales inquiries from website forms.",
-        columns: ["Name", "Company", "Service", "Status"],
-        rows: asRows(contactResult.data || [], (request) => [
-          String(request.full_name || "-"),
-          String(request.company_name || "-"),
-          String(request.service_required || "-"),
-          humanize(request.status),
-        ]),
-        emptyText: "No contact requests yet.",
+        title: "Portal Access Requests",
+        description: "Account requests from client, employee, and admin users before credentials are created.",
+        columns: ["Name", "Company", "Account", "Status"],
+        rows: [
+          ...asRows(accessResult.data || [], (request) => [
+            String(request.full_name || "-"),
+            String(request.company_name || "-"),
+            String(request.account_type || "-"),
+            humanize(request.status),
+          ]),
+          ...asRows(contactResult.data || [], (request) => [
+            String(request.full_name || "-"),
+            String(request.company_name || "-"),
+            String(request.service_required || "-"),
+            humanize(request.status),
+          ]),
+        ],
+        emptyText: "No portal access requests yet.",
       },
       {
-        title: "Careers, Projects, and Finance",
-        description: "Recent hiring, delivery, and billing records.",
+        title: "Users, Careers, Projects, and Finance",
+        description: "Recent users, hiring, delivery, and billing records.",
         columns: ["Item", "Type", "Status", "Signal"],
         rows: [
+          ...asRows(profileResult.data || [], (userProfile) => [
+            String(userProfile.full_name || userProfile.email || "-"),
+            humanize(userProfile.role),
+            String(userProfile.company_name || "-"),
+            formatDate(userProfile.created_at),
+          ]),
           ...asRows(careerResult.data || [], (application) => [
             String(application.full_name || "-"),
             String(application.role || "Career"),

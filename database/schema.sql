@@ -27,6 +27,10 @@ create table profiles (
   phone text,
   role user_role not null default 'individual_client',
   company_name text,
+  job_title text,
+  department text,
+  exp_points integer not null default 0,
+  is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -100,6 +104,8 @@ create table projects (
   description text,
   status request_status not null default 'new',
   budget numeric(12,2),
+  credit_cost numeric(12,2) not null default 0,
+  progress_percent integer not null default 0 check (progress_percent >= 0 and progress_percent <= 100),
   start_date date,
   due_date date,
   created_at timestamptz not null default now(),
@@ -112,6 +118,50 @@ create table project_updates (
   author_id uuid references profiles(id) on delete set null,
   title text not null,
   body text not null,
+  created_at timestamptz not null default now()
+);
+
+create table client_accounts (
+  profile_id uuid primary key references profiles(id) on delete cascade,
+  credit_balance numeric(12,2) not null default 0,
+  credit_limit numeric(12,2) not null default 0,
+  billing_email text,
+  account_status text not null default 'active',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table client_credit_ledger (
+  id uuid primary key default gen_random_uuid(),
+  client_id uuid not null references profiles(id) on delete cascade,
+  credit_change numeric(12,2) not null,
+  description text not null,
+  reference_type text,
+  reference_id uuid,
+  created_by uuid references profiles(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table project_members (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references projects(id) on delete cascade,
+  employee_id uuid not null references profiles(id) on delete cascade,
+  role_title text not null default 'Team Member',
+  assignment_status text not null default 'assigned',
+  assigned_at timestamptz not null default now(),
+  due_date date,
+  completed_at timestamptz,
+  unique(project_id, employee_id)
+);
+
+create table project_reviews (
+  id uuid primary key default gen_random_uuid(),
+  project_id uuid not null references projects(id) on delete cascade,
+  reviewer_id uuid references profiles(id) on delete set null,
+  employee_id uuid references profiles(id) on delete set null,
+  rating integer check (rating is null or (rating >= 1 and rating <= 5)),
+  review text not null,
+  review_type text not null default 'client',
   created_at timestamptz not null default now()
 );
 
@@ -128,6 +178,23 @@ create table contact_requests (
   source text not null default 'website',
   status request_status not null default 'new',
   created_at timestamptz not null default now()
+);
+
+create table portal_access_requests (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null,
+  phone text not null,
+  email text not null,
+  company_name text,
+  account_type text not null,
+  message text,
+  source text not null default 'portal-access',
+  status request_status not null default 'new',
+  reviewed_by uuid references profiles(id) on delete set null,
+  reviewed_at timestamptz,
+  admin_notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table career_applications (
@@ -209,7 +276,10 @@ create table employee_attendance (
   check_in timestamptz,
   check_out timestamptz,
   mode text not null default 'office',
+  status text not null default 'present',
   notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   unique(employee_id, work_date)
 );
 
@@ -230,7 +300,21 @@ create table tasks (
   title text not null,
   description text,
   status text not null default 'todo',
+  priority text not null default 'normal',
+  exp_points integer not null default 0,
   due_date date,
+  completed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table employee_xp_events (
+  id uuid primary key default gen_random_uuid(),
+  employee_id uuid not null references profiles(id) on delete cascade,
+  points integer not null,
+  reason text not null,
+  project_id uuid references projects(id) on delete set null,
+  task_id uuid references tasks(id) on delete set null,
+  created_by uuid references profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -246,9 +330,14 @@ create table audit_logs (
 
 alter table profiles enable row level security;
 alter table contact_requests enable row level security;
+alter table portal_access_requests enable row level security;
 alter table career_applications enable row level security;
 alter table projects enable row level security;
 alter table project_updates enable row level security;
+alter table client_accounts enable row level security;
+alter table client_credit_ledger enable row level security;
+alter table project_members enable row level security;
+alter table project_reviews enable row level security;
 alter table blog_posts enable row level security;
 alter table blog_comments enable row level security;
 alter table invoices enable row level security;
@@ -257,6 +346,7 @@ alter table support_tickets enable row level security;
 alter table employee_attendance enable row level security;
 alter table leave_requests enable row level security;
 alter table tasks enable row level security;
+alter table employee_xp_events enable row level security;
 alter table audit_logs enable row level security;
 
 -- Public inserts used by server actions with service role.
@@ -302,6 +392,16 @@ create policy "Clients can read own projects"
 on projects for select
 using (client_id = auth.uid());
 
+create policy "Employees can read assigned projects"
+on projects for select
+using (
+  exists (
+    select 1 from project_members
+    where project_members.project_id = projects.id
+      and project_members.employee_id = auth.uid()
+  )
+);
+
 create policy "Admins can manage projects"
 on projects for all
 using (public.is_admin())
@@ -319,6 +419,62 @@ using (
 
 create policy "Admins can manage project updates"
 on project_updates for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Clients can read own account"
+on client_accounts for select
+using (profile_id = auth.uid());
+
+create policy "Admins can manage client accounts"
+on client_accounts for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Clients can read own credit ledger"
+on client_credit_ledger for select
+using (client_id = auth.uid());
+
+create policy "Admins can manage client credit ledger"
+on client_credit_ledger for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Employees can read own project memberships"
+on project_members for select
+using (employee_id = auth.uid());
+
+create policy "Clients can read project memberships for own projects"
+on project_members for select
+using (
+  exists (
+    select 1 from projects
+    where projects.id = project_members.project_id
+      and projects.client_id = auth.uid()
+  )
+);
+
+create policy "Admins can manage project memberships"
+on project_members for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Clients can read reviews for own projects"
+on project_reviews for select
+using (
+  exists (
+    select 1 from projects
+    where projects.id = project_reviews.project_id
+      and projects.client_id = auth.uid()
+  )
+);
+
+create policy "Employees can read own project reviews"
+on project_reviews for select
+using (employee_id = auth.uid());
+
+create policy "Admins can manage project reviews"
+on project_reviews for all
 using (public.is_admin())
 with check (public.is_admin());
 
@@ -359,6 +515,15 @@ create policy "Employees can read own attendance"
 on employee_attendance for select
 using (employee_id = auth.uid());
 
+create policy "Employees can insert own attendance"
+on employee_attendance for insert
+with check (employee_id = auth.uid());
+
+create policy "Employees can update own attendance"
+on employee_attendance for update
+using (employee_id = auth.uid())
+with check (employee_id = auth.uid());
+
 create policy "Admins can manage attendance"
 on employee_attendance for all
 using (public.is_admin())
@@ -382,8 +547,22 @@ on tasks for all
 using (public.is_admin())
 with check (public.is_admin());
 
+create policy "Employees can read own xp events"
+on employee_xp_events for select
+using (employee_id = auth.uid());
+
+create policy "Admins can manage xp events"
+on employee_xp_events for all
+using (public.is_admin())
+with check (public.is_admin());
+
 create policy "Admins can manage contact requests"
 on contact_requests for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Admins can manage portal access requests"
+on portal_access_requests for all
 using (public.is_admin())
 with check (public.is_admin());
 
@@ -397,8 +576,16 @@ on audit_logs for select
 using (public.is_admin());
 
 create index contact_requests_status_idx on contact_requests(status);
+create index portal_access_requests_status_idx on portal_access_requests(status);
+create index portal_access_requests_email_idx on portal_access_requests(email);
 create index career_applications_status_idx on career_applications(status);
 create index projects_client_id_idx on projects(client_id);
+create index project_members_employee_id_idx on project_members(employee_id);
+create index client_credit_ledger_client_id_idx on client_credit_ledger(client_id);
+create index project_reviews_employee_id_idx on project_reviews(employee_id);
+create index employee_xp_events_employee_id_idx on employee_xp_events(employee_id);
 create index support_tickets_client_id_idx on support_tickets(client_id);
+create index employee_attendance_employee_date_idx on employee_attendance(employee_id, work_date);
+create index tasks_assignee_id_idx on tasks(assignee_id);
 create index blog_posts_slug_idx on blog_posts(slug);
 

@@ -1,4 +1,7 @@
 -- Idempotent portal authentication setup.
+-- For the full portal backend (access requests, client credits, employee
+-- attendance, project assignments, reviews, and EXP), prefer:
+-- database/portal-system-migration.sql
 -- Run this in Supabase SQL Editor when the database already exists and you only
 -- need Auth profiles, role checks, and portal read policies refreshed.
 

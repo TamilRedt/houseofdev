@@ -13,7 +13,7 @@
 
 Keep `SUPABASE_SERVICE_ROLE_KEY` server-only. Never expose it to the browser.
 
-The portal routes need both the public auth variables and the service role key. Run the latest `database/schema.sql` for a new database. If the database already exists, run `database/portal-auth-migration.sql` to refresh Auth profiles, role checks, and portal policies without recreating every table.
+The portal routes need both the public auth variables and the service role key. Run the latest `database/schema.sql` for a new database. If the database already exists, run `database/portal-system-migration.sql` to create or repair account requests, profiles, client credits, employee attendance, project assignments, project reviews, EXP records, and portal policies without deleting existing data.
 
 Portal credentials are created in Supabase Auth and mapped through `public.profiles.role`. Signed-out visitors see a shared access screen, not demo dashboard data. See `docs/PORTAL_USERS.md`.
 
@@ -52,6 +52,8 @@ Run these after deployment:
 - Open `/api/health`
 - Confirm `/api/health` reports `portalBackendConfigured: true`
 - Sign in to `/portal`, `/employee-portal`, and `/admin-dashboard` with users whose `profiles.role` values match the route
+- Submit a portal access request and confirm a row appears in `portal_access_requests`
+- Sign in as an employee and save a check-in/check-out record in `employee_attendance`
 - Open `/sitemap.xml`
 - Open `/robots.txt`
 - Submit a contact form

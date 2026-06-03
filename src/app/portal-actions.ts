@@ -9,6 +9,8 @@ import { getSupabaseAdmin, getSupabaseServerClient, type UserRole } from "@/lib/
 
 const allowedReturnPaths = new Set(["/portal", "/employee-portal", "/admin-dashboard"]);
 const accessTypes = new Set(["Client account", "Employee account", "Admin account"]);
+const attendanceModes = new Set(["office", "remote", "hybrid", "field"]);
+const attendanceRoles = new Set<UserRole>(["employee", "admin", "super_admin"]);
 
 function cleanReturnTo(value: FormDataEntryValue | null) {
   const path = String(value || "/portal");
@@ -77,6 +79,115 @@ async function getSignedInRole(userId: string): Promise<UserRole | null> {
     .maybeSingle();
 
   return data?.role ? (data.role as UserRole) : null;
+}
+
+async function getSignedInPortalUser(returnTo: string) {
+  const supabase = await getSupabaseServerClient();
+
+  if (!supabase) {
+    errorRedirect(returnTo, "Supabase Auth is not configured for this deployment.");
+  }
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    errorRedirect(returnTo, "Sign in before using this portal action.");
+  }
+
+  const role = await getSignedInRole(user.id);
+
+  if (!role) {
+    errorRedirect(returnTo, "Your account profile is missing. Ask an admin to activate your role.");
+  }
+
+  return { user, role };
+}
+
+function getIndiaWorkDate(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-IN", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function cleanAttendanceMode(value: FormDataEntryValue | null) {
+  const mode = String(value || "office").trim().toLowerCase();
+  return attendanceModes.has(mode) ? mode : "office";
+}
+
+async function storePortalAccessRequest(payload: {
+  fullName: string;
+  companyName: string;
+  email: string;
+  phone: string;
+  accountType: string;
+  message: string;
+  requestMessage: string;
+}) {
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    return { stored: false, target: "none" };
+  }
+
+  const portalResult = await supabase.from("portal_access_requests").insert({
+    full_name: payload.fullName,
+    company_name: payload.companyName || null,
+    email: payload.email,
+    phone: payload.phone,
+    account_type: payload.accountType,
+    message: payload.message || "Please contact me for a free consultation.",
+    source: "portal-access",
+    status: "new",
+  });
+
+  if (!portalResult.error) {
+    return { stored: true, target: "portal_access_requests" };
+  }
+
+  const contactPayload = {
+    full_name: payload.fullName,
+    company_name: payload.companyName || "Not provided",
+    email: payload.email,
+    phone: payload.phone,
+    industry: "Portal access",
+    budget: "Account request",
+    service_required: payload.accountType,
+    message: payload.requestMessage,
+    source: "portal-access",
+    status: "new",
+  };
+
+  const contactResult = await supabase.from("contact_requests").insert(contactPayload);
+
+  if (!contactResult.error) {
+    return { stored: true, target: "contact_requests" };
+  }
+
+  const legacyContactResult = await supabase.from("contact_requests").insert({
+    ...contactPayload,
+    source: undefined,
+  });
+
+  if (!legacyContactResult.error) {
+    return { stored: true, target: "contact_requests_legacy" };
+  }
+
+  console.error("Portal access request storage failed", {
+    portalAccessRequests: portalResult.error.message,
+    contactRequests: contactResult.error.message,
+    legacyContactRequests: legacyContactResult.error.message,
+  });
+
+  return { stored: false, target: "failed" };
 }
 
 export async function signInToPortal(formData: FormData) {
@@ -152,45 +263,132 @@ export async function requestPortalAccess(formData: FormData) {
     message ? `Message: ${message}` : "Message: Please contact me for a free consultation.",
   ].join("\n");
 
-  const supabase = getSupabaseAdmin();
-
-  if (supabase) {
-    const { error } = await supabase.from("contact_requests").insert({
-      full_name: fullName,
-      company_name: companyName || "Not provided",
-      email,
-      phone,
-      industry: "Portal access",
-      budget: "Account request",
-      service_required: accountType,
-      message: requestMessage,
-      source: "portal-access",
-      status: "new",
-    });
-
-    if (error) {
-      errorRedirect(returnTo, "We could not store the access request. Please use the contact page or try again.");
-    }
-  }
-
-  await sendNotificationEmail({
-    subject: `HouseOfDev portal access request - ${accountType}`,
-    html: `<h2 style="font-family:Inter,Arial,sans-serif;color:#0f172a">Portal access request</h2><table style="border-collapse:collapse;font-family:Inter,Arial,sans-serif">${rows({
-      Name: fullName,
-      Company: companyName || "Not provided",
-      Email: email,
-      Phone: phone,
-      Account: accountType,
-      Message: message || "Please contact me for a free consultation.",
-    })}</table>`,
+  const storage = await storePortalAccessRequest({
+    fullName,
+    companyName,
+    email,
+    phone,
+    accountType,
+    message,
+    requestMessage,
   });
+
+  let emailSent = false;
+
+  try {
+    const emailResult = await sendNotificationEmail({
+      subject: `HouseOfDev portal access request - ${accountType}`,
+      html: `<h2 style="font-family:Inter,Arial,sans-serif;color:#0f172a">Portal access request</h2><table style="border-collapse:collapse;font-family:Inter,Arial,sans-serif">${rows({
+        Name: fullName,
+        Company: companyName || "Not provided",
+        Email: email,
+        Phone: phone,
+        Account: accountType,
+        Message: message || "Please contact me for a free consultation.",
+      })}</table>`,
+    });
+    emailSent = emailResult.sent;
+  } catch (error) {
+    console.error("Portal access notification failed", error);
+  }
 
   noticeRedirect(
     returnTo,
-    supabase
+    storage.stored
       ? "Request received. The HouseOfDev team will confirm your account and contact you."
-      : "Request noted. Please also use the contact page so the team can confirm your account.",
+      : emailSent
+        ? "Request received. The team has been notified; please use the contact page too if this is urgent."
+        : "Request noted. Please use the contact page too so the team can confirm your account.",
   );
+}
+
+export async function recordAttendanceCheckIn(formData: FormData) {
+  const returnTo = "/employee-portal";
+  const { user, role } = await getSignedInPortalUser(returnTo);
+
+  if (!attendanceRoles.has(role)) {
+    errorRedirect(returnTo, "Only employee accounts can record attendance.");
+  }
+
+  const supabase = getSupabaseAdmin() || (await getSupabaseServerClient());
+
+  if (!supabase) {
+    errorRedirect(returnTo, "Attendance backend is not configured yet.");
+  }
+
+  const now = new Date().toISOString();
+  const workDate = getIndiaWorkDate();
+  const mode = cleanAttendanceMode(formData.get("mode"));
+  const notes = String(formData.get("notes") || "").trim();
+
+  const { error } = await supabase.from("employee_attendance").upsert(
+    {
+      employee_id: user.id,
+      work_date: workDate,
+      check_in: now,
+      mode,
+      notes: notes || null,
+      status: "present",
+      updated_at: now,
+    },
+    { onConflict: "employee_id,work_date" },
+  );
+
+  if (error) {
+    errorRedirect(returnTo, "Attendance table is not ready. Run database/portal-system-migration.sql in Supabase.");
+  }
+
+  noticeRedirect(returnTo, "Attendance check-in saved for today.");
+}
+
+export async function recordAttendanceCheckOut() {
+  const returnTo = "/employee-portal";
+  const { user, role } = await getSignedInPortalUser(returnTo);
+
+  if (!attendanceRoles.has(role)) {
+    errorRedirect(returnTo, "Only employee accounts can record attendance.");
+  }
+
+  const supabase = getSupabaseAdmin() || (await getSupabaseServerClient());
+
+  if (!supabase) {
+    errorRedirect(returnTo, "Attendance backend is not configured yet.");
+  }
+
+  const now = new Date().toISOString();
+  const workDate = getIndiaWorkDate();
+  const updateResult = await supabase
+    .from("employee_attendance")
+    .update({
+      check_out: now,
+      status: "completed",
+      updated_at: now,
+    })
+    .eq("employee_id", user.id)
+    .eq("work_date", workDate)
+    .select("id")
+    .maybeSingle();
+
+  if (updateResult.error) {
+    errorRedirect(returnTo, "Attendance table is not ready. Run database/portal-system-migration.sql in Supabase.");
+  }
+
+  if (!updateResult.data) {
+    const insertResult = await supabase.from("employee_attendance").insert({
+      employee_id: user.id,
+      work_date: workDate,
+      check_out: now,
+      mode: "office",
+      status: "completed",
+      updated_at: now,
+    });
+
+    if (insertResult.error) {
+      errorRedirect(returnTo, "Attendance table is not ready. Run database/portal-system-migration.sql in Supabase.");
+    }
+  }
+
+  noticeRedirect(returnTo, "Attendance check-out saved for today.");
 }
 
 export async function sendPortalPasswordReset(formData: FormData) {

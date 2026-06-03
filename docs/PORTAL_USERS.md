@@ -18,7 +18,7 @@ After a valid Supabase Auth user signs in, the app reads that user's `public.pro
 
 ## Request Before Credentials
 
-Do not create portal credentials for every visitor. If a visitor does not have an account, they should use the portal access request form or the contact page. That creates a normal `contact_requests` lead with `source = portal-access`.
+Do not create portal credentials for every visitor. If a visitor does not have an account, they should use the portal access request form or the contact page. The portal form stores a `portal_access_requests` row when the portal system migration has been run, and falls back to `contact_requests` for older databases.
 
 Recommended flow:
 
@@ -27,6 +27,25 @@ Recommended flow:
 3. Team creates credentials in Supabase Auth.
 4. Team assigns the correct `public.profiles.role`.
 5. User signs in and is routed to the right portal.
+
+## Database Tables
+
+Run `database/portal-system-migration.sql` in Supabase SQL Editor for an existing project. It creates or repairs the portal system without deleting data.
+
+Main portal tables:
+
+- `profiles`: one row per Supabase Auth user, with `role`, phone, company, job title, department, and active status.
+- `portal_access_requests`: account requests from visitors before credentials are created.
+- `client_accounts`: client credit balance, credit limit, billing email, and account status.
+- `client_credit_ledger`: credit additions and usage history shown to clients.
+- `projects` and `project_updates`: client project status, progress, budget, credit cost, and updates.
+- `project_members`: employee project assignments, upcoming work, and finished work.
+- `tasks`: employee tasks, due dates, priority, and task EXP.
+- `employee_attendance`: employee check-in/check-out records.
+- `leave_requests`: employee leave requests.
+- `project_reviews`: finished project reviews for employees and projects.
+- `employee_xp_events`: employee EXP points history.
+- `invoices`, `payments`, and `support_tickets`: client billing and support records.
 
 ## Create Credentials From This Repo
 
@@ -37,7 +56,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-2. If the database already exists, run `database/portal-auth-migration.sql` once in the Supabase SQL Editor. For a new database, run the full `database/schema.sql`.
+2. If the database already exists, run `database/portal-system-migration.sql` once in the Supabase SQL Editor. For a new database, run the full `database/schema.sql`.
 
 3. Create the user:
 
@@ -78,4 +97,4 @@ The access screen includes a password reset form. Supabase sends the reset email
 5. Go to Table Editor > `profiles`.
 6. Find the row with the same user id and set `role` to the required value.
 
-If the profile row is missing, run `database/portal-auth-migration.sql`, then create the user again or insert a row with the Auth user id.
+If the profile row is missing, run `database/portal-system-migration.sql`, then create the user again or insert a row with the Auth user id.

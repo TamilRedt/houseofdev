@@ -21,13 +21,16 @@ Planned roles:
 
 Recommended flow:
 
-1. Use Supabase Auth for login and registration.
+1. Use Supabase Auth for login. Do not allow public self-registration for portal accounts.
 2. Run the schema trigger so each signup creates a `profiles` row with the default role `individual_client`.
-3. Allow only super admins to promote roles.
-4. Re-check authorization in Server Components, Server Actions, and Route Handlers.
-5. Avoid relying only on middleware for access control.
+3. Store account requests in `portal_access_requests`, confirm the person by call/message, then create credentials.
+4. Allow only super admins to promote roles.
+5. Re-check authorization in Server Components, Server Actions, and Route Handlers.
+6. Avoid relying only on middleware for access control.
 
 Credentials are created in Supabase Auth. The website reads `public.profiles.role` to decide portal access. Use `npm run create:portal-user -- --email user@example.com --password "StrongPass123!" --role admin --name "Admin User"` from this repo, or create the user manually in Supabase and update the matching `profiles` row.
+
+For existing databases, run `database/portal-system-migration.sql` to create or repair `portal_access_requests`, `client_accounts`, `client_credit_ledger`, `project_members`, `project_reviews`, `employee_xp_events`, attendance columns, and the matching RLS policies.
 
 Implemented portal access:
 
@@ -64,6 +67,7 @@ Recommended next steps:
 ## Operations
 
 - Create admin views for contact requests, career applications, projects, invoices, payments, and support tickets.
+- Create admin workflows for approving `portal_access_requests` and then creating Supabase Auth credentials.
 - Create status transitions for requests and tickets.
 - Add email templates for client updates.
 - Add file retention rules for resumes, project assets, and invoices.
