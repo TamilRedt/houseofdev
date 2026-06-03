@@ -540,7 +540,7 @@ export const stats = [
 ];
 
 export const technologyStack = [
-  "Next.js 15",
+  "Next.js 16",
   "TypeScript",
   "Tailwind CSS",
   "Framer Motion",

@@ -13,6 +13,8 @@
 
 Keep `SUPABASE_SERVICE_ROLE_KEY` server-only. Never expose it to the browser.
 
+The portal routes need both the public auth variables and the service role key. Run the latest `database/schema.sql` so Supabase Auth creates `profiles` rows and dashboard roles can read their own records.
+
 ## 2. AWS SES
 
 1. Verify the sender domain or sender email in AWS SES.
@@ -46,6 +48,8 @@ Keep `SUPABASE_SERVICE_ROLE_KEY` server-only. Never expose it to the browser.
 Run these after deployment:
 
 - Open `/api/health`
+- Confirm `/api/health` reports `portalBackendConfigured: true`
+- Sign in to `/portal`, `/employee-portal`, and `/admin-dashboard` with users whose `profiles.role` values match the route
 - Open `/sitemap.xml`
 - Open `/robots.txt`
 - Submit a contact form

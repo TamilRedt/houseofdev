@@ -24,6 +24,16 @@ function getSesClient() {
   return sesClient;
 }
 
+export function isEmailConfigured() {
+  return Boolean(
+    process.env.AWS_REGION &&
+      process.env.AWS_ACCESS_KEY_ID &&
+      process.env.AWS_SECRET_ACCESS_KEY &&
+      process.env.CONTACT_EMAIL_FROM &&
+      process.env.CONTACT_EMAIL_TO,
+  );
+}
+
 export async function sendNotificationEmail({
   subject,
   html,

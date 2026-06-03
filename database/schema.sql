@@ -31,6 +31,56 @@ create table profiles (
   updated_at timestamptz not null default now()
 );
 
+create or replace function public.current_user_role()
+returns user_role
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select role from public.profiles where id = auth.uid()
+$$;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select public.current_user_role() in ('admin', 'super_admin')
+$$;
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.profiles (id, full_name, email, phone, role, company_name)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1), 'Portal User'),
+    coalesce(new.email, ''),
+    new.raw_user_meta_data->>'phone',
+    'individual_client',
+    new.raw_user_meta_data->>'company_name'
+  )
+  on conflict (id) do update
+  set email = excluded.email,
+      updated_at = now();
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function public.handle_new_user();
+
 create table services (
   id uuid primary key default gen_random_uuid(),
   title text not null,
@@ -216,38 +266,135 @@ create policy "Users can read own profile"
 on profiles for select
 using (auth.uid() = id);
 
+create policy "Admins can read profiles"
+on profiles for select
+using (public.is_admin());
+
 create policy "Users can update own profile"
 on profiles for update
 using (auth.uid() = id)
 with check (auth.uid() = id);
 
+create policy "Admins can update profiles"
+on profiles for update
+using (public.is_admin())
+with check (public.is_admin());
+
 create policy "Published blog posts are public"
 on blog_posts for select
 using (is_published = true);
+
+create policy "Admins can manage blog posts"
+on blog_posts for all
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "Approved comments are public"
 on blog_comments for select
 using (is_approved = true);
 
+create policy "Admins can manage blog comments"
+on blog_comments for all
+using (public.is_admin())
+with check (public.is_admin());
+
 create policy "Clients can read own projects"
 on projects for select
 using (client_id = auth.uid());
+
+create policy "Admins can manage projects"
+on projects for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Clients can read own project updates"
+on project_updates for select
+using (
+  exists (
+    select 1 from projects
+    where projects.id = project_updates.project_id
+      and projects.client_id = auth.uid()
+  )
+);
+
+create policy "Admins can manage project updates"
+on project_updates for all
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "Clients can read own invoices"
 on invoices for select
 using (client_id = auth.uid());
 
+create policy "Admins can manage invoices"
+on invoices for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Clients can read own payments"
+on payments for select
+using (
+  exists (
+    select 1 from invoices
+    where invoices.id = payments.invoice_id
+      and invoices.client_id = auth.uid()
+  )
+);
+
+create policy "Admins can manage payments"
+on payments for all
+using (public.is_admin())
+with check (public.is_admin());
+
 create policy "Clients can read own tickets"
 on support_tickets for select
 using (client_id = auth.uid());
+
+create policy "Admins can manage tickets"
+on support_tickets for all
+using (public.is_admin())
+with check (public.is_admin());
 
 create policy "Employees can read own attendance"
 on employee_attendance for select
 using (employee_id = auth.uid());
 
+create policy "Admins can manage attendance"
+on employee_attendance for all
+using (public.is_admin())
+with check (public.is_admin());
+
 create policy "Employees can read own leave requests"
 on leave_requests for select
 using (employee_id = auth.uid());
+
+create policy "Admins can manage leave requests"
+on leave_requests for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Employees can read assigned tasks"
+on tasks for select
+using (assignee_id = auth.uid());
+
+create policy "Admins can manage tasks"
+on tasks for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Admins can manage contact requests"
+on contact_requests for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Admins can manage career applications"
+on career_applications for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Admins can read audit logs"
+on audit_logs for select
+using (public.is_admin());
 
 create index contact_requests_status_idx on contact_requests(status);
 create index career_applications_status_idx on career_applications(status);

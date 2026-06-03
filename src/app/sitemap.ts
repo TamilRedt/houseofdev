@@ -14,9 +14,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/careers",
     "/blog",
     "/contact",
-    "/portal",
-    "/employee-portal",
-    "/admin-dashboard",
   ];
 
   const dynamicRoutes = [

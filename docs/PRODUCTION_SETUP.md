@@ -22,10 +22,16 @@ Planned roles:
 Recommended flow:
 
 1. Use Supabase Auth for login and registration.
-2. Create a `profiles` row on signup with the default role `individual_client`.
+2. Run the schema trigger so each signup creates a `profiles` row with the default role `individual_client`.
 3. Allow only super admins to promote roles.
 4. Re-check authorization in Server Components, Server Actions, and Route Handlers.
 5. Avoid relying only on middleware for access control.
+
+Implemented portal access:
+
+- `/portal`: `individual_client`, `business_client`, `admin`, and `super_admin`.
+- `/employee-portal`: `employee`, `admin`, and `super_admin`.
+- `/admin-dashboard`: `admin` and `super_admin`.
 
 ## Performance
 

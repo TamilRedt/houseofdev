@@ -82,7 +82,7 @@ export function SiteFooter() {
 
         <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} HouseOfDev. All rights reserved.</p>
-          <p>Built with Next.js 15, TypeScript, Supabase, AWS, and Vercel.</p>
+          <p>Built with Next.js 16, TypeScript, Supabase, AWS, and Vercel.</p>
         </div>
       </Container>
     </footer>
