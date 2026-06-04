@@ -7,7 +7,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-slate-200 bg-slate-950 text-white">
       <Container className="py-14">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <Link href="/" className="flex items-center gap-3">
               <span className="grid h-10 w-10 place-items-center rounded-md bg-white text-sm font-bold text-slate-950">
@@ -64,20 +64,6 @@ export function SiteFooter() {
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">Portals</h3>
-            <div className="mt-4 grid gap-3">
-              <Link href="/portal" className="text-sm text-slate-300 hover:text-white">
-                Client Portal
-              </Link>
-              <Link href="/employee-portal" className="text-sm text-slate-300 hover:text-white">
-                Employee Portal
-              </Link>
-              <Link href="/admin-dashboard" className="text-sm text-slate-300 hover:text-white">
-                Admin Dashboard
-              </Link>
-            </div>
-          </div>
         </div>
 
         <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">

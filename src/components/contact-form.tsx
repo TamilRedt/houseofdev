@@ -48,6 +48,8 @@ export function ContactForm() {
       industry: "",
       budget: "",
       serviceRequired: "",
+      preferredDate: "",
+      preferredTime: "",
       message: "",
       website: "",
     },
@@ -128,6 +130,19 @@ export function ContactForm() {
         </select>
         <FieldError message={errors.serviceRequired?.message || state.errors?.serviceRequired?.[0]} />
       </label>
+
+      <div className="mt-5 grid gap-5 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-semibold text-slate-700">Preferred Date</span>
+          <input className={inputClass} {...register("preferredDate")} type="date" />
+          <FieldError message={errors.preferredDate?.message || state.errors?.preferredDate?.[0]} />
+        </label>
+        <label className="block">
+          <span className="text-sm font-semibold text-slate-700">Preferred Time</span>
+          <input className={inputClass} {...register("preferredTime")} placeholder="Example: 11:00 AM" />
+          <FieldError message={errors.preferredTime?.message || state.errors?.preferredTime?.[0]} />
+        </label>
+      </div>
 
       <label className="mt-5 block">
         <span className="text-sm font-semibold text-slate-700">Message</span>

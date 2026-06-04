@@ -8,6 +8,8 @@ export const contactSchema = z.object({
   industry: z.string().min(2, "Select or enter your industry"),
   budget: z.string().min(2, "Select a budget range"),
   serviceRequired: z.string().min(2, "Select a service"),
+  preferredDate: z.string().optional(),
+  preferredTime: z.string().optional(),
   message: z.string().min(10, "Tell us a little about the project"),
   website: z.string().optional(),
 });

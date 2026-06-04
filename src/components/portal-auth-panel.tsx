@@ -5,6 +5,7 @@ import {
   recordAttendanceCheckOut,
   signInToPortal,
   signOutFromPortal,
+  submitAccountChangeRequest,
 } from "@/app/portal-actions";
 import { getPortalRoleLabel, getPortalRoute, type PortalDashboardData } from "@/lib/portal";
 
@@ -19,6 +20,7 @@ export function PortalAuthPanel({ dashboard, authError }: PortalAuthPanelProps) 
   const showSignedIn = dashboard.profile && (dashboard.mode === "live" || dashboard.mode === "unauthorized");
   const showAttendance = dashboard.mode === "live" && dashboard.kind === "employee";
   const showCredentialForm = dashboard.mode === "live" && dashboard.kind === "admin";
+  const showAccountChangeForm = dashboard.mode === "live" && dashboard.kind === "client";
   const canCreateAdmin = dashboard.profile?.role === "super_admin";
 
   return (
@@ -29,10 +31,10 @@ export function PortalAuthPanel({ dashboard, authError }: PortalAuthPanelProps) 
         </div>
         <div>
           <p className="text-sm font-semibold text-slate-950">
-            {dashboard.backendConfigured ? "Backend Connected" : "Demo Mode"}
+            {dashboard.backendConfigured ? "Backend Connected" : "Backend Setup Needed"}
           </p>
           <p className="text-xs text-slate-500">
-            {dashboard.mode === "live" ? "Live Supabase records" : "Safe preview data"}
+            {dashboard.mode === "live" ? "Live Supabase records" : "Secure account access required"}
           </p>
         </div>
       </div>
@@ -231,6 +233,59 @@ export function PortalAuthPanel({ dashboard, authError }: PortalAuthPanelProps) 
               Create Credential
             </button>
           </div>
+        </form>
+      ) : null}
+
+      {showAccountChangeForm ? (
+        <form action={submitAccountChangeRequest} className="mt-5 rounded-md border border-violet-200 bg-violet-50 p-4">
+          <input type="hidden" name="returnTo" value={returnTo} />
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-violet-700" />
+            <p className="text-sm font-semibold text-violet-950">Request Account Change</p>
+          </div>
+          <label className="mt-4 block">
+            <span className="text-xs font-semibold uppercase tracking-[0.12em] text-violet-800">Request Type</span>
+            <select
+              name="requestType"
+              defaultValue="package_upgrade"
+              className="mt-2 min-h-10 w-full rounded-md border border-violet-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-violet-600 focus:outline-none focus:ring-4 focus:ring-violet-600/10"
+            >
+              <option value="package_upgrade">Package Upgrade</option>
+              <option value="package_change">Package Change</option>
+              <option value="password_help">Password Help</option>
+              <option value="account_details">Account Details</option>
+            </select>
+          </label>
+          <div className="mt-3 grid gap-3">
+            <input
+              name="currentPackage"
+              placeholder="Current package"
+              className="min-h-10 w-full rounded-md border border-violet-200 bg-white px-3 text-sm text-slate-950 shadow-sm placeholder:text-slate-400 focus:border-violet-600 focus:outline-none focus:ring-4 focus:ring-violet-600/10"
+            />
+            <input
+              name="requestedPackage"
+              placeholder="Requested package"
+              className="min-h-10 w-full rounded-md border border-violet-200 bg-white px-3 text-sm text-slate-950 shadow-sm placeholder:text-slate-400 focus:border-violet-600 focus:outline-none focus:ring-4 focus:ring-violet-600/10"
+            />
+            <input
+              name="phone"
+              type="tel"
+              placeholder="Phone number"
+              className="min-h-10 w-full rounded-md border border-violet-200 bg-white px-3 text-sm text-slate-950 shadow-sm placeholder:text-slate-400 focus:border-violet-600 focus:outline-none focus:ring-4 focus:ring-violet-600/10"
+            />
+            <textarea
+              name="message"
+              required
+              placeholder="Tell us what you want to change."
+              className="min-h-20 w-full resize-y rounded-md border border-violet-200 bg-white px-3 py-2 text-sm text-slate-950 shadow-sm placeholder:text-slate-400 focus:border-violet-600 focus:outline-none focus:ring-4 focus:ring-violet-600/10"
+            />
+          </div>
+          <button
+            type="submit"
+            className="mt-3 inline-flex min-h-10 w-full items-center justify-center rounded-md bg-violet-700 px-4 text-sm font-semibold text-white transition hover:bg-slate-950"
+          >
+            Send Change Request
+          </button>
         </form>
       ) : null}
 

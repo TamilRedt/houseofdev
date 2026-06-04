@@ -145,6 +145,27 @@ alter table public.contact_requests add column if not exists source text not nul
 alter table public.contact_requests add column if not exists status public.request_status not null default 'new';
 alter table public.contact_requests add column if not exists created_at timestamptz not null default now();
 
+create table if not exists public.consultation_requests (
+  id uuid primary key default gen_random_uuid(),
+  contact_request_id uuid references public.contact_requests(id) on delete set null,
+  full_name text not null,
+  company_name text,
+  email text not null,
+  phone text not null,
+  industry text,
+  budget text,
+  service_required text not null,
+  message text not null,
+  preferred_date date,
+  preferred_time text,
+  source text not null default 'website-consultation',
+  status public.request_status not null default 'new',
+  appointment_at timestamptz,
+  admin_notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.portal_access_requests (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
@@ -171,6 +192,44 @@ create table if not exists public.portal_credential_events (
   action text not null default 'created',
   source_request_id uuid references public.portal_access_requests(id) on delete set null,
   notes text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.portal_activity_logs (
+  id uuid primary key default gen_random_uuid(),
+  actor_id uuid references public.profiles(id) on delete set null,
+  email text,
+  event_type text not null,
+  status text not null default 'success',
+  ip_address text,
+  user_agent text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.account_change_requests (
+  id uuid primary key default gen_random_uuid(),
+  requester_id uuid references public.profiles(id) on delete set null,
+  email text not null,
+  phone text,
+  request_type text not null,
+  current_package text,
+  requested_package text,
+  message text not null,
+  status public.request_status not null default 'new',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.notification_events (
+  id uuid primary key default gen_random_uuid(),
+  related_table text not null,
+  related_id uuid,
+  event_type text not null,
+  channel text not null,
+  target text,
+  status text not null default 'pending',
+  response text,
   created_at timestamptz not null default now()
 );
 
@@ -339,8 +398,12 @@ create table if not exists public.employee_xp_events (
 
 alter table public.profiles enable row level security;
 alter table public.contact_requests enable row level security;
+alter table public.consultation_requests enable row level security;
 alter table public.portal_access_requests enable row level security;
 alter table public.portal_credential_events enable row level security;
+alter table public.portal_activity_logs enable row level security;
+alter table public.account_change_requests enable row level security;
+alter table public.notification_events enable row level security;
 alter table public.projects enable row level security;
 alter table public.project_updates enable row level security;
 alter table public.client_accounts enable row level security;
@@ -383,6 +446,12 @@ on public.contact_requests for all
 using (public.is_admin())
 with check (public.is_admin());
 
+drop policy if exists "Admins can manage consultation requests" on public.consultation_requests;
+create policy "Admins can manage consultation requests"
+on public.consultation_requests for all
+using (public.is_admin())
+with check (public.is_admin());
+
 drop policy if exists "Admins can manage portal access requests" on public.portal_access_requests;
 create policy "Admins can manage portal access requests"
 on public.portal_access_requests for all
@@ -398,6 +467,37 @@ drop policy if exists "Admins can insert portal credential events" on public.por
 create policy "Admins can insert portal credential events"
 on public.portal_credential_events for insert
 with check (public.is_admin());
+
+drop policy if exists "Admins can read portal activity logs" on public.portal_activity_logs;
+create policy "Admins can read portal activity logs"
+on public.portal_activity_logs for select
+using (public.is_admin());
+
+drop policy if exists "Users can read own activity logs" on public.portal_activity_logs;
+create policy "Users can read own activity logs"
+on public.portal_activity_logs for select
+using (actor_id = auth.uid());
+
+drop policy if exists "Users can create own account change requests" on public.account_change_requests;
+create policy "Users can create own account change requests"
+on public.account_change_requests for insert
+with check (requester_id = auth.uid());
+
+drop policy if exists "Users can read own account change requests" on public.account_change_requests;
+create policy "Users can read own account change requests"
+on public.account_change_requests for select
+using (requester_id = auth.uid());
+
+drop policy if exists "Admins can manage account change requests" on public.account_change_requests;
+create policy "Admins can manage account change requests"
+on public.account_change_requests for all
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "Admins can read notification events" on public.notification_events;
+create policy "Admins can read notification events"
+on public.notification_events for select
+using (public.is_admin());
 
 drop policy if exists "Clients can read own projects" on public.projects;
 create policy "Clients can read own projects"
@@ -611,10 +711,17 @@ using (public.is_admin())
 with check (public.is_admin());
 
 create index if not exists contact_requests_status_idx on public.contact_requests(status);
+create index if not exists consultation_requests_status_idx on public.consultation_requests(status);
+create index if not exists consultation_requests_email_idx on public.consultation_requests(email);
 create index if not exists portal_access_requests_status_idx on public.portal_access_requests(status);
 create index if not exists portal_access_requests_email_idx on public.portal_access_requests(email);
 create index if not exists portal_credential_events_email_idx on public.portal_credential_events(email);
 create index if not exists portal_credential_events_created_by_idx on public.portal_credential_events(created_by);
+create index if not exists portal_activity_logs_actor_idx on public.portal_activity_logs(actor_id);
+create index if not exists portal_activity_logs_event_type_idx on public.portal_activity_logs(event_type);
+create index if not exists account_change_requests_requester_idx on public.account_change_requests(requester_id);
+create index if not exists account_change_requests_status_idx on public.account_change_requests(status);
+create index if not exists notification_events_related_idx on public.notification_events(related_table, related_id);
 create index if not exists projects_client_id_idx on public.projects(client_id);
 create index if not exists project_members_employee_id_idx on public.project_members(employee_id);
 create index if not exists client_credit_ledger_client_id_idx on public.client_credit_ledger(client_id);

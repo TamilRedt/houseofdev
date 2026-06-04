@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { sendNotificationEmail } from "@/lib/email";
+import { sendLeadNotifications, type NotificationResult } from "@/lib/notifications";
 import { getDefaultPortalRouteForRole } from "@/lib/portal";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getSupabaseAdmin, getSupabaseServerClient, type UserRole } from "@/lib/supabase";
@@ -13,6 +13,7 @@ const attendanceModes = new Set(["office", "remote", "hybrid", "field"]);
 const attendanceRoles = new Set<UserRole>(["employee", "admin", "super_admin"]);
 const credentialRoles = new Set<UserRole>(["admin", "employee", "business_client", "individual_client"]);
 const adminRoles = new Set<UserRole>(["admin", "super_admin"]);
+const accountChangeTypes = new Set(["package_upgrade", "package_change", "password_help", "account_details"]);
 
 function cleanReturnTo(value: FormDataEntryValue | null) {
   const path = String(value || "/portal");
@@ -65,6 +66,76 @@ async function getRequestOrigin() {
   const proto = headerStore.get("x-forwarded-proto") || "http";
 
   return host ? `${proto}://${host}` : "http://localhost:3000";
+}
+
+async function getRequestContext() {
+  const headerStore = await headers();
+
+  return {
+    ip: getFirstIp(headerStore.get("x-forwarded-for") || headerStore.get("x-real-ip")),
+    userAgent: headerStore.get("user-agent") || null,
+  };
+}
+
+async function logPortalActivity({
+  actorId,
+  email,
+  eventType,
+  status = "success",
+  metadata = {},
+}: {
+  actorId?: string | null;
+  email?: string | null;
+  eventType: string;
+  status?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    return;
+  }
+
+  const context = await getRequestContext();
+  await supabase.from("portal_activity_logs").insert({
+    actor_id: actorId || null,
+    email: email || null,
+    event_type: eventType,
+    status,
+    ip_address: context.ip,
+    user_agent: context.userAgent,
+    metadata,
+  });
+}
+
+async function recordNotificationEvents({
+  relatedTable,
+  relatedId,
+  eventType,
+  results,
+}: {
+  relatedTable: string;
+  relatedId: string | null;
+  eventType: string;
+  results: NotificationResult[];
+}) {
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase || !results.length) {
+    return;
+  }
+
+  await supabase.from("notification_events").insert(
+    results.map((result) => ({
+      related_table: relatedTable,
+      related_id: relatedId,
+      event_type: eventType,
+      channel: result.channel,
+      target: result.target,
+      status: result.sent ? "sent" : "skipped",
+      response: result.response || result.reason || null,
+    })),
+  );
 }
 
 async function getSignedInRole(userId: string): Promise<UserRole | null> {
@@ -229,6 +300,12 @@ export async function signInToPortal(formData: FormData) {
   });
 
   if (error) {
+    await logPortalActivity({
+      email,
+      eventType: "login_failed",
+      status: "failed",
+      metadata: { reason: error.message, returnTo },
+    });
     errorRedirect(returnTo, error.message);
   }
 
@@ -236,6 +313,13 @@ export async function signInToPortal(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   const role = user ? await getSignedInRole(user.id) : null;
+
+  await logPortalActivity({
+    actorId: user?.id || null,
+    email,
+    eventType: "login_success",
+    metadata: { role, returnTo },
+  });
 
   redirect(role ? getDefaultPortalRouteForRole(role) : returnTo);
 }
@@ -245,6 +329,15 @@ export async function signOutFromPortal(formData: FormData) {
   const supabase = await getSupabaseServerClient();
 
   if (supabase) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    await logPortalActivity({
+      actorId: user?.id || null,
+      email: user?.email || null,
+      eventType: "logout",
+      metadata: { returnTo },
+    });
     await supabase.auth.signOut();
   }
 
@@ -292,9 +385,19 @@ export async function requestPortalAccess(formData: FormData) {
   });
 
   let emailSent = false;
+  const notificationText = [
+    "New HouseOfDev portal access request",
+    `Name: ${fullName}`,
+    `Company: ${companyName || "Not provided"}`,
+    `Email: ${email}`,
+    `Phone: ${phone}`,
+    `Account: ${accountType}`,
+    `Message: ${message || "Please contact me for a free consultation."}`,
+  ].join("\n");
+  let notificationResults: NotificationResult[] = [];
 
   try {
-    const emailResult = await sendNotificationEmail({
+    notificationResults = await sendLeadNotifications({
       subject: `HouseOfDev portal access request - ${accountType}`,
       html: `<h2 style="font-family:Inter,Arial,sans-serif;color:#0f172a">Portal access request</h2><table style="border-collapse:collapse;font-family:Inter,Arial,sans-serif">${rows({
         Name: fullName,
@@ -304,11 +407,24 @@ export async function requestPortalAccess(formData: FormData) {
         Account: accountType,
         Message: message || "Please contact me for a free consultation.",
       })}</table>`,
+      text: notificationText,
     });
-    emailSent = emailResult.sent;
+    emailSent = notificationResults.some((result) => result.sent);
   } catch (error) {
     console.error("Portal access notification failed", error);
   }
+
+  await logPortalActivity({
+    email,
+    eventType: "portal_access_request_submitted",
+    metadata: { accountType, storageTarget: storage.target },
+  });
+  await recordNotificationEvents({
+    relatedTable: storage.target === "portal_access_requests" ? "portal_access_requests" : "contact_requests",
+    relatedId: null,
+    eventType: "portal_access_request_submitted",
+    results: notificationResults,
+  });
 
   noticeRedirect(
     returnTo,
@@ -407,6 +523,85 @@ export async function recordAttendanceCheckOut() {
   }
 
   noticeRedirect(returnTo, "Attendance check-out saved for today.");
+}
+
+export async function submitAccountChangeRequest(formData: FormData) {
+  const returnTo = cleanReturnTo(formData.get("returnTo"));
+  const limited = await assertRateLimit("account-change");
+
+  if (!limited) {
+    errorRedirect(returnTo, "Too many requests. Please wait a minute and try again.");
+  }
+
+  const { user } = await getSignedInPortalUser(returnTo);
+  const requestType = String(formData.get("requestType") || "").trim();
+  const currentPackage = String(formData.get("currentPackage") || "").trim();
+  const requestedPackage = String(formData.get("requestedPackage") || "").trim();
+  const message = String(formData.get("message") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+
+  if (!accountChangeTypes.has(requestType) || message.length < 8) {
+    errorRedirect(returnTo, "Choose a request type and enter a short message.");
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    errorRedirect(returnTo, "Supabase backend is required to store account change requests.");
+  }
+
+  const insertResult = await supabase.from("account_change_requests").insert({
+    requester_id: user.id,
+    email: user.email || "",
+    phone: phone || null,
+    request_type: requestType,
+    current_package: currentPackage || null,
+    requested_package: requestedPackage || null,
+    message,
+    status: "new",
+  }).select("id").maybeSingle();
+
+  if (insertResult.error) {
+    errorRedirect(returnTo, "Could not store the account change request. Run database/portal-system-migration.sql in Supabase.");
+  }
+
+  const requestId = insertResult.data?.id ? String(insertResult.data.id) : null;
+  const notificationText = [
+    "New HouseOfDev account change request",
+    `Email: ${user.email || "-"}`,
+    `Phone: ${phone || "-"}`,
+    `Type: ${requestType}`,
+    `Current package: ${currentPackage || "-"}`,
+    `Requested package: ${requestedPackage || "-"}`,
+    `Message: ${message}`,
+  ].join("\n");
+  const notificationResults = await sendLeadNotifications({
+    subject: `HouseOfDev account change request - ${requestType}`,
+    html: `<h2 style="font-family:Inter,Arial,sans-serif;color:#0f172a">Account change request</h2><table style="border-collapse:collapse;font-family:Inter,Arial,sans-serif">${rows({
+      Email: user.email || "-",
+      Phone: phone || "-",
+      Type: requestType,
+      "Current Package": currentPackage || "-",
+      "Requested Package": requestedPackage || "-",
+      Message: message,
+    })}</table>`,
+    text: notificationText,
+  });
+
+  await logPortalActivity({
+    actorId: user.id,
+    email: user.email || null,
+    eventType: "account_change_request_submitted",
+    metadata: { requestId, requestType, currentPackage, requestedPackage },
+  });
+  await recordNotificationEvents({
+    relatedTable: "account_change_requests",
+    relatedId: requestId,
+    eventType: "account_change_request_submitted",
+    results: notificationResults,
+  });
+
+  noticeRedirect(returnTo, "Request saved. The HouseOfDev team will review it and contact you.");
 }
 
 export async function createPortalCredential(formData: FormData) {
@@ -527,6 +722,13 @@ export async function createPortalCredential(formData: FormData) {
     notes: notes || null,
   });
 
+  await logPortalActivity({
+    actorId: adminUser.id,
+    email,
+    eventType: "credential_created",
+    metadata: { createdUserId: createdUser.id, role, companyName, requestId: sourceRequestId },
+  });
+
   if (sourceRequestId) {
     await supabase
       .from("portal_access_requests")
@@ -575,8 +777,20 @@ export async function sendPortalPasswordReset(formData: FormData) {
   });
 
   if (error) {
+    await logPortalActivity({
+      email,
+      eventType: "password_reset_requested",
+      status: "failed",
+      metadata: { reason: error.message },
+    });
     errorRedirect(returnTo, error.message);
   }
+
+  await logPortalActivity({
+    email,
+    eventType: "password_reset_requested",
+    metadata: { returnTo },
+  });
 
   noticeRedirect(returnTo, "If that email has an account, a password reset link has been sent.");
 }
@@ -602,8 +816,27 @@ export async function updatePortalPassword(formData: FormData) {
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    await logPortalActivity({
+      actorId: user?.id || null,
+      email: user?.email || null,
+      eventType: "password_update",
+      status: "failed",
+      metadata: { reason: error.message },
+    });
     redirect(`/update-password?portal_error=${encodeURIComponent(error.message)}`);
   }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  await logPortalActivity({
+    actorId: user?.id || null,
+    email: user?.email || null,
+    eventType: "password_update",
+  });
 
   await supabase.auth.signOut();
   redirect(`/portal?portal_notice=${encodeURIComponent("Password updated. Sign in with your new password.")}`);

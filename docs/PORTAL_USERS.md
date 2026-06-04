@@ -18,7 +18,7 @@ After a valid Supabase Auth user signs in, the app reads that user's `public.pro
 
 ## Request Before Credentials
 
-Do not create portal credentials for every visitor. If a visitor does not have an account, they should use the portal access request form or the contact page. The portal form stores a `portal_access_requests` row when the portal system migration has been run, and falls back to `contact_requests` for older databases.
+Do not create portal credentials for every visitor. If a visitor does not have an account, they should use the portal access request form or the contact page. The portal form stores a `portal_access_requests` row when the portal system migration has been run, and falls back to `contact_requests` for older databases. The contact consultation form stores both a `contact_requests` row and a `consultation_requests` row.
 
 Recommended flow:
 
@@ -37,8 +37,12 @@ Run `database/portal-system-migration.sql` in Supabase SQL Editor for an existin
 Main portal tables:
 
 - `profiles`: one row per Supabase Auth user, with `role`, phone, company, job title, department, and active status.
+- `consultation_requests`: free consultation requests with phone, email, preferred date/time, status, and message.
 - `portal_access_requests`: account requests from visitors before credentials are created.
 - `portal_credential_events`: admin-only audit trail for credential creation. It never stores passwords.
+- `portal_activity_logs`: login success/failure, logout, password reset, password update, credential creation, consultation, and account-change audit records.
+- `account_change_requests`: client/admin-visible requests such as package upgrades, package changes, password help, and account detail changes.
+- `notification_events`: email, Telegram, and WhatsApp notification attempts for consultation, career, access, and account-change requests.
 - `client_accounts`: client credit balance, credit limit, billing email, and account status.
 - `client_credit_ledger`: credit additions and usage history shown to clients.
 - `projects` and `project_updates`: client project status, progress, budget, credit cost, and updates.
@@ -63,6 +67,16 @@ Admin dashboard flow:
 5. Ask the user to use Forgot Password after first sign-in if they want to set their own password.
 
 The server action checks the signed-in admin role before calling the Supabase Admin API. Passwords are sent to Supabase Auth only; they are not stored in `profiles` or any portal table.
+
+## Notification Flow
+
+Requests are stored first, then the app attempts configured notifications:
+
+- Email uses AWS SES variables from `.env.example`.
+- Telegram uses `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
+- WhatsApp uses the WhatsApp Cloud API variables `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TO_NUMBER`, and `WHATSAPP_GRAPH_API_VERSION`.
+
+Each attempt is written to `notification_events`, so admins can see whether a channel sent, failed, or was skipped because the environment variables were missing.
 
 ## Create Credentials From This Repo
 

@@ -693,10 +693,13 @@ async function countRows(db: SupabaseClient, table: string, notices: string[], l
 
 async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, notices: string[]): Promise<PortalDashboardData> {
   const [
+    consultationCount,
     accessCount,
     contactCount,
+    changeCount,
     careerCount,
     profileCount,
+    activityCount,
     clientAccountCount,
     assignmentCount,
     xpCount,
@@ -704,17 +707,22 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
     invoiceCount,
     paymentCount,
     ticketCount,
+    consultationResult,
     accessResult,
     contactResult,
+    changeResult,
     profileResult,
     careerResult,
     projectResult,
     invoiceResult,
   ] = await Promise.all([
+    countRows(db, "consultation_requests", notices, "Consultation count"),
     countRows(db, "portal_access_requests", notices, "Portal access count"),
     countRows(db, "contact_requests", notices, "Contact count"),
+    countRows(db, "account_change_requests", notices, "Account change count"),
     countRows(db, "career_applications", notices, "Career count"),
     countRows(db, "profiles", notices, "Profile count"),
+    countRows(db, "portal_activity_logs", notices, "Activity log count"),
     countRows(db, "client_accounts", notices, "Client account count"),
     countRows(db, "project_members", notices, "Project assignment count"),
     countRows(db, "employee_xp_events", notices, "EXP count"),
@@ -723,6 +731,11 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
     countRows(db, "payments", notices, "Payment count"),
     countRows(db, "support_tickets", notices, "Ticket count"),
     db
+      .from("consultation_requests")
+      .select("full_name, company_name, service_required, preferred_date, preferred_time, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    db
       .from("portal_access_requests")
       .select("full_name, company_name, account_type, status, created_at")
       .order("created_at", { ascending: false })
@@ -730,6 +743,11 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
     db
       .from("contact_requests")
       .select("full_name, company_name, service_required, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    db
+      .from("account_change_requests")
+      .select("email, request_type, current_package, requested_package, status, created_at")
       .order("created_at", { ascending: false })
       .limit(6),
     db
@@ -754,8 +772,10 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
       .limit(6),
   ]);
 
+  addError(notices, "Consultation requests", consultationResult.error);
   addError(notices, "Portal access requests", accessResult.error);
   addError(notices, "Recent contacts", contactResult.error);
+  addError(notices, "Account change requests", changeResult.error);
   addError(notices, "User profiles", profileResult.error);
   addError(notices, "Recent careers", careerResult.error);
   addError(notices, "Recent projects", projectResult.error);
@@ -764,17 +784,23 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
   return {
     ...demoDashboard("admin", "live", notices, profile),
     stats: [
-      { label: "Access Requests", value: String(accessCount), helper: `${contactCount} contact leads, ${careerCount} career applications` },
-      { label: "Users", value: String(profileCount), helper: `${clientAccountCount} client credit accounts` },
+      { label: "Consultations", value: String(consultationCount), helper: `${accessCount} access requests, ${contactCount} leads, ${careerCount} careers` },
+      { label: "Users", value: String(profileCount), helper: `${clientAccountCount} client accounts, ${changeCount} change requests` },
       { label: "Delivery", value: String(projectCount), helper: `${assignmentCount} employee assignments, ${xpCount} EXP records` },
-      { label: "Finance", value: `${invoiceCount}/${paymentCount}`, helper: `${ticketCount} support tickets` },
+      { label: "Finance", value: `${invoiceCount}/${paymentCount}`, helper: `${ticketCount} support tickets, ${activityCount} activity logs` },
     ],
     tables: [
       {
-        title: "Portal Access Requests",
-        description: "Account requests from client, employee, and admin users before credentials are created.",
-        columns: ["Name", "Company", "Account", "Status"],
+        title: "Consultation and Access Requests",
+        description: "Live consultation bookings, account requests, and public inquiries.",
+        columns: ["Name", "Company", "Request", "Status"],
         rows: [
+          ...asRows(consultationResult.data || [], (request) => [
+            String(request.full_name || "-"),
+            String(request.company_name || "-"),
+            `${String(request.service_required || "-")} ${request.preferred_date ? `(${formatDate(request.preferred_date)} ${request.preferred_time || ""})` : ""}`.trim(),
+            humanize(request.status),
+          ]),
           ...asRows(accessResult.data || [], (request) => [
             String(request.full_name || "-"),
             String(request.company_name || "-"),
@@ -788,13 +814,19 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
             humanize(request.status),
           ]),
         ],
-        emptyText: "No portal access requests yet.",
+        emptyText: "No consultation or access requests yet.",
       },
       {
-        title: "Users, Careers, Projects, and Finance",
-        description: "Recent users, hiring, delivery, and billing records.",
+        title: "Users, Changes, Careers, Projects, and Finance",
+        description: "Recent users, account changes, hiring, delivery, and billing records.",
         columns: ["Item", "Type", "Status", "Signal"],
         rows: [
+          ...asRows(changeResult.data || [], (request) => [
+            String(request.email || "-"),
+            humanize(request.request_type),
+            humanize(request.status),
+            String(request.requested_package || request.current_package || "-"),
+          ]),
           ...asRows(profileResult.data || [], (userProfile) => [
             String(userProfile.full_name || userProfile.email || "-"),
             humanize(userProfile.role),

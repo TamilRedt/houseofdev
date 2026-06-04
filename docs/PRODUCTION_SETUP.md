@@ -2,7 +2,7 @@
 
 ## Security
 
-- Keep Supabase service role and AWS secrets only in server-side environment variables.
+- Keep Supabase service role, AWS, Telegram, and WhatsApp secrets only in server-side environment variables.
 - Use Supabase RLS for every table exposed to authenticated users.
 - Add admin policies only after implementing explicit role checks.
 - Add WAF/rate limiting at Vercel or a managed edge layer for production traffic.
@@ -23,14 +23,14 @@ Recommended flow:
 
 1. Use Supabase Auth for login. Do not allow public self-registration for portal accounts.
 2. Run the schema trigger so each signup creates a `profiles` row with the default role `individual_client`.
-3. Store account requests in `portal_access_requests`, confirm the person by call/message, then create credentials from `/admin-dashboard`.
+3. Store consultation requests in `consultation_requests` and account requests in `portal_access_requests`, confirm the person by call/message, then create credentials from `/admin-dashboard`.
 4. Allow only super admins to promote roles.
 5. Re-check authorization in Server Components, Server Actions, and Route Handlers.
 6. Avoid relying only on middleware for access control.
 
 Credentials are created in Supabase Auth. The website reads `public.profiles.role` to decide portal access. Use `npm run create:portal-user -- --email user@example.com --password "StrongPass123!" --role admin --name "Admin User"` from this repo, or create the user manually in Supabase and update the matching `profiles` row.
 
-For existing databases, run `database/portal-system-migration.sql` to create or repair `portal_access_requests`, `portal_credential_events`, `client_accounts`, `client_credit_ledger`, `project_members`, `project_reviews`, `employee_xp_events`, attendance columns, and the matching RLS policies.
+For existing databases, run `database/portal-system-migration.sql` to create or repair `consultation_requests`, `portal_access_requests`, `portal_credential_events`, `portal_activity_logs`, `account_change_requests`, `notification_events`, `client_accounts`, `client_credit_ledger`, `project_members`, `project_reviews`, `employee_xp_events`, attendance columns, and the matching RLS policies.
 
 Implemented portal access:
 
@@ -67,8 +67,9 @@ Recommended next steps:
 ## Operations
 
 - Create admin views for contact requests, career applications, projects, invoices, payments, and support tickets.
-- Create admin workflows for approving `portal_access_requests` and then creating Supabase Auth credentials.
+- Create admin workflows for approving `consultation_requests` and `portal_access_requests`, then creating Supabase Auth credentials.
 - Keep `SUPABASE_SERVICE_ROLE_KEY` server-only; it is required for the admin credential action.
+- Configure AWS SES, Telegram, and WhatsApp alerts so new consultation/account requests reach the team immediately.
 - Create status transitions for requests and tickets.
 - Add email templates for client updates.
 - Add file retention rules for resumes, project assets, and invoices.

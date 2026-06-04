@@ -1,7 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
-import { sendNotificationEmail } from "@/lib/email";
+import { sendLeadNotifications, type NotificationResult } from "@/lib/notifications";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { careerSchema, contactSchema } from "@/lib/validations";
@@ -40,6 +40,73 @@ async function assertRateLimit(scope: string) {
   return checkRateLimit(`${scope}:${ip}`);
 }
 
+async function getRequestContext() {
+  const headerStore = await headers();
+
+  return {
+    ip: getFirstIp(headerStore.get("x-forwarded-for") || headerStore.get("x-real-ip")),
+    userAgent: headerStore.get("user-agent") || null,
+  };
+}
+
+async function recordActivityLog({
+  email,
+  eventType,
+  status = "success",
+  metadata = {},
+}: {
+  email?: string;
+  eventType: string;
+  status?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    return;
+  }
+
+  const context = await getRequestContext();
+  await supabase.from("portal_activity_logs").insert({
+    email: email || null,
+    event_type: eventType,
+    status,
+    ip_address: context.ip,
+    user_agent: context.userAgent,
+    metadata,
+  });
+}
+
+async function recordNotificationEvents({
+  relatedTable,
+  relatedId,
+  eventType,
+  results,
+}: {
+  relatedTable: string;
+  relatedId: string | null;
+  eventType: string;
+  results: NotificationResult[];
+}) {
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase || !results.length) {
+    return;
+  }
+
+  await supabase.from("notification_events").insert(
+    results.map((result) => ({
+      related_table: relatedTable,
+      related_id: relatedId,
+      event_type: eventType,
+      channel: result.channel,
+      target: result.target,
+      status: result.sent ? "sent" : "skipped",
+      response: result.response || result.reason || null,
+    })),
+  );
+}
+
 export async function submitContact(_: ActionState, formData: FormData): Promise<ActionState> {
   const limited = await assertRateLimit("contact");
   if (!limited) {
@@ -57,6 +124,8 @@ export async function submitContact(_: ActionState, formData: FormData): Promise
     industry: String(formData.get("industry") || ""),
     budget: String(formData.get("budget") || ""),
     serviceRequired: String(formData.get("serviceRequired") || ""),
+    preferredDate: String(formData.get("preferredDate") || ""),
+    preferredTime: String(formData.get("preferredTime") || ""),
     message: String(formData.get("message") || ""),
     website: String(formData.get("website") || ""),
   };
@@ -78,8 +147,11 @@ export async function submitContact(_: ActionState, formData: FormData): Promise
   }
 
   const supabase = getSupabaseAdmin();
+  let contactRequestId: string | null = null;
+  let consultationRequestId: string | null = null;
+
   if (supabase) {
-    const { error } = await supabase.from("contact_requests").insert({
+    const contactResult = await supabase.from("contact_requests").insert({
       full_name: parsed.data.fullName,
       company_name: parsed.data.companyName,
       email: parsed.data.email,
@@ -88,19 +160,67 @@ export async function submitContact(_: ActionState, formData: FormData): Promise
       budget: parsed.data.budget,
       service_required: parsed.data.serviceRequired,
       message: parsed.data.message,
-      source: "website",
+      source: "website-consultation",
       status: "new",
-    });
+    }).select("id").maybeSingle();
 
-    if (error) {
+    if (!contactResult.error && contactResult.data) {
+      contactRequestId = String(contactResult.data.id);
+    }
+
+    const consultationResult = await supabase.from("consultation_requests").insert({
+      contact_request_id: contactRequestId,
+      full_name: parsed.data.fullName,
+      company_name: parsed.data.companyName,
+      email: parsed.data.email,
+      phone: parsed.data.phone,
+      industry: parsed.data.industry,
+      budget: parsed.data.budget,
+      service_required: parsed.data.serviceRequired,
+      message: parsed.data.message,
+      preferred_date: parsed.data.preferredDate || null,
+      preferred_time: parsed.data.preferredTime || null,
+      source: "website-consultation",
+      status: "new",
+    }).select("id").maybeSingle();
+
+    if (!consultationResult.error && consultationResult.data) {
+      consultationRequestId = String(consultationResult.data.id);
+    }
+
+    if (contactResult.error && consultationResult.error) {
       return {
         ok: false,
-        message: "We could not store the request. Please try again or contact us directly.",
+        message: "We could not store the request. Please run the Supabase portal migration or contact us directly.",
       };
     }
+
+    await recordActivityLog({
+      email: parsed.data.email,
+      eventType: "consultation_request_submitted",
+      metadata: {
+        contactRequestId,
+        consultationRequestId,
+        service: parsed.data.serviceRequired,
+        preferredDate: parsed.data.preferredDate || null,
+        preferredTime: parsed.data.preferredTime || null,
+      },
+    });
   }
 
-  await sendNotificationEmail({
+  const notificationText = [
+    "New HouseOfDev consultation request",
+    `Name: ${parsed.data.fullName}`,
+    `Company: ${parsed.data.companyName}`,
+    `Email: ${parsed.data.email}`,
+    `Phone: ${parsed.data.phone}`,
+    `Industry: ${parsed.data.industry}`,
+    `Budget: ${parsed.data.budget}`,
+    `Service: ${parsed.data.serviceRequired}`,
+    `Preferred: ${parsed.data.preferredDate || "-"} ${parsed.data.preferredTime || ""}`.trim(),
+    `Message: ${parsed.data.message}`,
+  ].join("\n");
+  const notificationResults = await sendLeadNotifications({
     subject: `New HouseOfDev inquiry from ${parsed.data.fullName}`,
     html: `<h2 style="font-family:Inter,Arial,sans-serif;color:#0f172a">New HouseOfDev inquiry</h2><table style="border-collapse:collapse;font-family:Inter,Arial,sans-serif">${rows({
       Name: parsed.data.fullName,
@@ -110,15 +230,26 @@ export async function submitContact(_: ActionState, formData: FormData): Promise
       Industry: parsed.data.industry,
       Budget: parsed.data.budget,
       Service: parsed.data.serviceRequired,
+      "Preferred Date": parsed.data.preferredDate || "-",
+      "Preferred Time": parsed.data.preferredTime || "-",
       Message: parsed.data.message,
     })}</table>`,
+    text: notificationText,
   });
+  await recordNotificationEvents({
+    relatedTable: consultationRequestId ? "consultation_requests" : "contact_requests",
+    relatedId: consultationRequestId || contactRequestId,
+    eventType: "consultation_request_submitted",
+    results: notificationResults,
+  });
+
+  const notified = notificationResults.some((result) => result.sent);
 
   return {
     ok: true,
-    message: supabase
+    message: supabase || notified
       ? "Thanks. Your request has been received, and our team will contact you shortly."
-      : "Thanks. Demo mode received your request. Add Supabase credentials to store submissions.",
+      : "Thanks. Your request was prepared, but storage is not configured yet. Please message us directly if this is urgent.",
   };
 }
 
@@ -190,7 +321,17 @@ export async function submitCareerApplication(
     }
   }
 
-  await sendNotificationEmail({
+  const careerNotificationText = [
+    "New HouseOfDev career application",
+    `Name: ${parsed.data.fullName}`,
+    `Email: ${parsed.data.email}`,
+    `Phone: ${parsed.data.phone}`,
+    `Role: ${parsed.data.role}`,
+    `Portfolio: ${parsed.data.portfolio || "-"}`,
+    `Resume: ${resumePath || "Not uploaded or storage not configured"}`,
+    `Message: ${parsed.data.message}`,
+  ].join("\n");
+  const notificationResults = await sendLeadNotifications({
     subject: `New HouseOfDev career application - ${parsed.data.role}`,
     html: `<h2 style="font-family:Inter,Arial,sans-serif;color:#0f172a">New career application</h2><table style="border-collapse:collapse;font-family:Inter,Arial,sans-serif">${rows({
       Name: parsed.data.fullName,
@@ -201,12 +342,19 @@ export async function submitCareerApplication(
       Resume: resumePath || "Not uploaded or storage not configured",
       Message: parsed.data.message,
     })}</table>`,
+    text: careerNotificationText,
+  });
+  await recordNotificationEvents({
+    relatedTable: "career_applications",
+    relatedId: null,
+    eventType: "career_application_submitted",
+    results: notificationResults,
   });
 
   return {
     ok: true,
     message: supabase
       ? "Application received. We will review it and contact shortlisted candidates."
-      : "Application captured in demo mode. Add Supabase credentials to store applications.",
+      : "Application details were prepared, but storage is not configured yet. Please email us directly if this is urgent.",
   };
 }

@@ -180,6 +180,27 @@ create table contact_requests (
   created_at timestamptz not null default now()
 );
 
+create table consultation_requests (
+  id uuid primary key default gen_random_uuid(),
+  contact_request_id uuid references contact_requests(id) on delete set null,
+  full_name text not null,
+  company_name text,
+  email text not null,
+  phone text not null,
+  industry text,
+  budget text,
+  service_required text not null,
+  message text not null,
+  preferred_date date,
+  preferred_time text,
+  source text not null default 'website-consultation',
+  status request_status not null default 'new',
+  appointment_at timestamptz,
+  admin_notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table portal_access_requests (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
@@ -206,6 +227,44 @@ create table portal_credential_events (
   action text not null default 'created',
   source_request_id uuid references portal_access_requests(id) on delete set null,
   notes text,
+  created_at timestamptz not null default now()
+);
+
+create table portal_activity_logs (
+  id uuid primary key default gen_random_uuid(),
+  actor_id uuid references profiles(id) on delete set null,
+  email text,
+  event_type text not null,
+  status text not null default 'success',
+  ip_address text,
+  user_agent text,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table account_change_requests (
+  id uuid primary key default gen_random_uuid(),
+  requester_id uuid references profiles(id) on delete set null,
+  email text not null,
+  phone text,
+  request_type text not null,
+  current_package text,
+  requested_package text,
+  message text not null,
+  status request_status not null default 'new',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table notification_events (
+  id uuid primary key default gen_random_uuid(),
+  related_table text not null,
+  related_id uuid,
+  event_type text not null,
+  channel text not null,
+  target text,
+  status text not null default 'pending',
+  response text,
   created_at timestamptz not null default now()
 );
 
@@ -342,8 +401,12 @@ create table audit_logs (
 
 alter table profiles enable row level security;
 alter table contact_requests enable row level security;
+alter table consultation_requests enable row level security;
 alter table portal_access_requests enable row level security;
 alter table portal_credential_events enable row level security;
+alter table portal_activity_logs enable row level security;
+alter table account_change_requests enable row level security;
+alter table notification_events enable row level security;
 alter table career_applications enable row level security;
 alter table projects enable row level security;
 alter table project_updates enable row level security;
@@ -574,6 +637,11 @@ on contact_requests for all
 using (public.is_admin())
 with check (public.is_admin());
 
+create policy "Admins can manage consultation requests"
+on consultation_requests for all
+using (public.is_admin())
+with check (public.is_admin());
+
 create policy "Admins can manage portal access requests"
 on portal_access_requests for all
 using (public.is_admin())
@@ -587,6 +655,31 @@ create policy "Admins can insert portal credential events"
 on portal_credential_events for insert
 with check (public.is_admin());
 
+create policy "Admins can read portal activity logs"
+on portal_activity_logs for select
+using (public.is_admin());
+
+create policy "Users can read own activity logs"
+on portal_activity_logs for select
+using (actor_id = auth.uid());
+
+create policy "Users can create own account change requests"
+on account_change_requests for insert
+with check (requester_id = auth.uid());
+
+create policy "Users can read own account change requests"
+on account_change_requests for select
+using (requester_id = auth.uid());
+
+create policy "Admins can manage account change requests"
+on account_change_requests for all
+using (public.is_admin())
+with check (public.is_admin());
+
+create policy "Admins can read notification events"
+on notification_events for select
+using (public.is_admin());
+
 create policy "Admins can manage career applications"
 on career_applications for all
 using (public.is_admin())
@@ -597,10 +690,17 @@ on audit_logs for select
 using (public.is_admin());
 
 create index contact_requests_status_idx on contact_requests(status);
+create index consultation_requests_status_idx on consultation_requests(status);
+create index consultation_requests_email_idx on consultation_requests(email);
 create index portal_access_requests_status_idx on portal_access_requests(status);
 create index portal_access_requests_email_idx on portal_access_requests(email);
 create index portal_credential_events_email_idx on portal_credential_events(email);
 create index portal_credential_events_created_by_idx on portal_credential_events(created_by);
+create index portal_activity_logs_actor_idx on portal_activity_logs(actor_id);
+create index portal_activity_logs_event_type_idx on portal_activity_logs(event_type);
+create index account_change_requests_requester_idx on account_change_requests(requester_id);
+create index account_change_requests_status_idx on account_change_requests(status);
+create index notification_events_related_idx on notification_events(related_table, related_id);
 create index career_applications_status_idx on career_applications(status);
 create index projects_client_id_idx on projects(client_id);
 create index project_members_employee_id_idx on project_members(employee_id);

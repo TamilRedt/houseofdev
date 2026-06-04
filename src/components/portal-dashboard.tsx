@@ -33,7 +33,7 @@ function modeLabel(mode: PortalDashboardData["mode"]) {
     return "Backend Warning";
   }
 
-  return "Demo";
+  return "Setup Required";
 }
 
 function DataTable({ table }: { table: PortalTable }) {
@@ -108,7 +108,7 @@ export function PortalDashboard({ dashboard, authError, authNotice }: PortalDash
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-300">Status</p>
               <p className="mt-2 text-2xl font-semibold">{modeLabel(dashboard.mode)}</p>
               <p className="mt-2 text-sm text-slate-300">
-                {dashboard.backendConfigured ? "Supabase backend is ready." : "Showing safe fallback data."}
+                {dashboard.backendConfigured ? "Supabase backend is ready." : "Secure backend setup is required."}
               </p>
             </div>
           </div>
