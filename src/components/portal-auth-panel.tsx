@@ -7,6 +7,7 @@ import {
   signOutFromPortal,
   submitAccountChangeRequest,
 } from "@/app/portal-actions";
+import { PasswordField } from "@/components/password-field";
 import { getPortalRoleLabel, getPortalRoute, type PortalDashboardData } from "@/lib/portal";
 
 type PortalAuthPanelProps = {
@@ -159,17 +160,14 @@ export function PortalAuthPanel({ dashboard, authError }: PortalAuthPanelProps) 
                 />
               </label>
             </div>
-            <label className="block">
-              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Temporary Password</span>
-              <input
-                name="password"
-                type="password"
-                required
-                minLength={8}
-                autoComplete="new-password"
-                className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
-              />
-            </label>
+            <PasswordField
+              label="Temporary Password"
+              name="password"
+              autoComplete="new-password"
+              minLength={8}
+              className="mt-2 min-h-10 w-full rounded-md border border-blue-200 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              labelClassName="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800"
+            />
             <label className="block">
               <span className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Role</span>
               <select
@@ -301,15 +299,14 @@ export function PortalAuthPanel({ dashboard, authError }: PortalAuthPanelProps) 
               className="mt-2 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
             />
           </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Password</span>
-            <input
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              className="mt-2 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
-            />
-          </label>
+          <PasswordField
+            label="Password"
+            name="password"
+            autoComplete="current-password"
+            required={false}
+            className="mt-2 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+            labelClassName="text-sm font-semibold text-slate-700"
+          />
           <button
             type="submit"
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-slate-950"

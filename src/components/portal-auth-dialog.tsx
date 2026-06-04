@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { KeyRound, LogIn, UserPlus, X } from "lucide-react";
 import { requestPortalAccess, sendPortalPasswordReset, signInToPortal } from "@/app/portal-actions";
+import { PasswordField } from "@/components/password-field";
 
 type AuthMode = "signin" | "signup" | "reset";
 
@@ -73,10 +74,12 @@ export function PortalAuthDialog() {
                   <span className="text-sm font-medium text-blue-700">Email</span>
                   <input name="email" type="email" autoComplete="email" required className={inputClass} />
                 </label>
-                <label className="block">
-                  <span className="text-sm font-medium text-blue-700">Password</span>
-                  <input name="password" type="password" autoComplete="current-password" required className={inputClass} />
-                </label>
+                <PasswordField
+                  label="Password"
+                  name="password"
+                  autoComplete="current-password"
+                  className={inputClass}
+                />
                 <button
                   type="button"
                   onClick={() => setMode("reset")}

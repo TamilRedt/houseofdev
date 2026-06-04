@@ -11,8 +11,27 @@ export type UserRole =
 
 let adminClient: SupabaseClient | null = null;
 
+function normalizeSupabaseUrl(value: string | undefined) {
+  const raw = value?.trim().replace(/^['"]|['"]$/g, "");
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+export function getSupabaseUrl() {
+  return normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+}
+
 export function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = getSupabaseUrl();
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceRoleKey) {
@@ -32,15 +51,15 @@ export function getSupabaseAdmin() {
 }
 
 export function isSupabaseConfigured() {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return Boolean(getSupabaseUrl() && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
 export function isSupabaseAdminConfigured() {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+  return Boolean(getSupabaseUrl() && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
 export function isSupabasePublicConfigured() {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  return Boolean(getSupabaseUrl() && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 }
 
 export function isPortalBackendConfigured() {
@@ -48,7 +67,7 @@ export function isPortalBackendConfigured() {
 }
 
 export async function getSupabaseServerClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const url = getSupabaseUrl();
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anonKey) {

@@ -110,6 +110,17 @@ function required(value, label) {
   return value;
 }
 
+function normalizeSupabaseUrl(value) {
+  const raw = value?.trim().replace(/^['"]|['"]$/g, "");
+
+  if (!raw) {
+    return "";
+  }
+
+  const url = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+  return url.origin;
+}
+
 function generatedPassword() {
   return randomBytes(18).toString("base64url");
 }
@@ -230,7 +241,7 @@ async function main() {
     throw new Error("Use a password with at least 8 characters.");
   }
 
-  const supabaseUrl = required(process.env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_URL");
+  const supabaseUrl = normalizeSupabaseUrl(required(process.env.NEXT_PUBLIC_SUPABASE_URL, "NEXT_PUBLIC_SUPABASE_URL"));
   const serviceRoleKey = required(process.env.SUPABASE_SERVICE_ROLE_KEY, "SUPABASE_SERVICE_ROLE_KEY");
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: {

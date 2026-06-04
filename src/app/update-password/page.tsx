@@ -1,6 +1,7 @@
 import { KeyRound } from "lucide-react";
 import { updatePortalPassword } from "@/app/portal-actions";
 import { Container } from "@/components/container";
+import { PasswordField } from "@/components/password-field";
 import { createMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -47,28 +48,22 @@ export default async function UpdatePasswordPage({ searchParams }: PageProps) {
           ) : null}
 
           <form action={updatePortalPassword} className="mt-7 grid gap-5">
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">New Password</span>
-              <input
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                minLength={8}
-                className="mt-2 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
-              />
-            </label>
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Confirm Password</span>
-              <input
-                name="confirmPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                minLength={8}
-                className="mt-2 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
-              />
-            </label>
+            <PasswordField
+              label="New Password"
+              name="password"
+              autoComplete="new-password"
+              minLength={8}
+              className="mt-2 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              labelClassName="text-sm font-semibold text-slate-700"
+            />
+            <PasswordField
+              label="Confirm Password"
+              name="confirmPassword"
+              autoComplete="new-password"
+              minLength={8}
+              className="mt-2 min-h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-950 shadow-sm focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-600/10"
+              labelClassName="text-sm font-semibold text-slate-700"
+            />
             <button
               type="submit"
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-slate-950"

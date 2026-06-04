@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AlertTriangle, KeyRound, LogIn, LogOut, UserPlus } from "lucide-react";
 import { requestPortalAccess, sendPortalPasswordReset, signInToPortal, signOutFromPortal } from "@/app/portal-actions";
 import { Container } from "@/components/container";
+import { PasswordField } from "@/components/password-field";
 import { getPortalRoute, getPortalRoleLabel, type PortalDashboardData } from "@/lib/portal";
 
 type PortalAccessGateProps = {
@@ -86,10 +87,12 @@ export function PortalAccessGate({ dashboard, authError, authNotice }: PortalAcc
                 <span className="text-sm font-medium text-blue-700">Email</span>
                 <input name="email" type="email" autoComplete="email" required className={inputClass} />
               </label>
-              <label className="block">
-                <span className="text-sm font-medium text-blue-700">Password</span>
-                <input name="password" type="password" autoComplete="current-password" required className={inputClass} />
-              </label>
+              <PasswordField
+                label="Password"
+                name="password"
+                autoComplete="current-password"
+                className={inputClass}
+              />
               <div className="flex items-center justify-between gap-4">
                 <a href="#request-account" className="text-sm font-semibold text-blue-700 hover:text-blue-900">
                   Create account

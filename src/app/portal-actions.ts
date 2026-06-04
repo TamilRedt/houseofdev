@@ -28,6 +28,24 @@ function noticeRedirect(path: string, message: string): never {
   redirect(`${path}?portal_notice=${encodeURIComponent(message)}`);
 }
 
+function getFriendlyAuthError(message: string) {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("invalid path specified") || normalized.includes("invalid url")) {
+    return "Portal authentication URL is not valid yet. Check Vercel env NEXT_PUBLIC_SUPABASE_URL and keep only the Supabase project URL.";
+  }
+
+  if (normalized.includes("fetch failed") || normalized.includes("failed to fetch")) {
+    return "Portal authentication could not reach Supabase. Try again in a moment or check the Supabase project settings.";
+  }
+
+  if (normalized.includes("invalid login credentials")) {
+    return "Email or password is incorrect. Use the admin-created credential or request a reset.";
+  }
+
+  return message;
+}
+
 function getFirstIp(value: string | null) {
   return value?.split(",")[0]?.trim() || "anonymous";
 }
@@ -306,7 +324,7 @@ export async function signInToPortal(formData: FormData) {
       status: "failed",
       metadata: { reason: error.message, returnTo },
     });
-    errorRedirect(returnTo, error.message);
+    errorRedirect(returnTo, getFriendlyAuthError(error.message));
   }
 
   const {
@@ -783,7 +801,7 @@ export async function sendPortalPasswordReset(formData: FormData) {
       status: "failed",
       metadata: { reason: error.message },
     });
-    errorRedirect(returnTo, error.message);
+    errorRedirect(returnTo, getFriendlyAuthError(error.message));
   }
 
   await logPortalActivity({
@@ -826,7 +844,7 @@ export async function updatePortalPassword(formData: FormData) {
       status: "failed",
       metadata: { reason: error.message },
     });
-    redirect(`/update-password?portal_error=${encodeURIComponent(error.message)}`);
+    redirect(`/update-password?portal_error=${encodeURIComponent(getFriendlyAuthError(error.message))}`);
   }
 
   const {
