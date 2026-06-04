@@ -32,15 +32,15 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-3" aria-label="HouseOfDev home">
+      <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between gap-4 px-5 sm:px-6 lg:px-8">
+        <Link href="/" className="flex shrink-0 items-center gap-3" aria-label="HouseOfDev home">
           <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-bold text-white">
             HD
           </span>
           <span className="text-base font-semibold tracking-normal text-slate-950">HouseOfDev</span>
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
+        <nav className="hidden flex-1 items-center justify-center gap-1 xl:flex" aria-label="Main navigation">
           {navItems.map((item) => {
             const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
             const hasMega = item.label === "Services";
@@ -51,7 +51,7 @@ export function SiteHeader() {
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950",
+                      "flex items-center gap-1 whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950",
                       active && "bg-slate-100 text-slate-950",
                     )}
                   >
@@ -95,7 +95,7 @@ export function SiteHeader() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "rounded-md px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950",
+                  "whitespace-nowrap rounded-md px-2.5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950",
                   active && "bg-slate-100 text-slate-950",
                 )}
               >
@@ -105,11 +105,11 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <div className="hidden items-center gap-3 lg:flex">
+        <div className="hidden shrink-0 items-center gap-2 xl:flex">
           <PortalAuthDialog />
           <Link
             href="/contact"
-            className="inline-flex h-10 items-center rounded-md bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-slate-950"
+            className="inline-flex h-10 items-center whitespace-nowrap rounded-md bg-blue-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-slate-950"
           >
             Get Free Consultation
           </Link>
@@ -117,7 +117,7 @@ export function SiteHeader() {
 
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-slate-900 lg:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-slate-900 xl:hidden"
           onClick={() => setMobileOpen((value) => !value)}
           aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
         >
@@ -126,7 +126,7 @@ export function SiteHeader() {
       </div>
 
       {mobileOpen ? (
-        <div className="border-t border-slate-200 bg-white lg:hidden">
+        <div className="border-t border-slate-200 bg-white xl:hidden">
           <div className="mx-auto grid max-w-7xl gap-1 px-5 py-4 sm:px-6">
             {navItems.map((item) => (
               <Link
