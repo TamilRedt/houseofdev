@@ -1,5 +1,6 @@
 "use server";
 
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { sendLeadNotifications, type NotificationResult } from "@/lib/notifications";
@@ -170,6 +171,27 @@ async function getSignedInRole(userId: string): Promise<UserRole | null> {
     .maybeSingle();
 
   return data?.role ? (data.role as UserRole) : null;
+}
+
+async function findAuthUserByEmail(supabase: SupabaseClient, email: string): Promise<User | null> {
+  const normalizedEmail = email.toLowerCase();
+  const perPage = 1000;
+
+  for (let page = 1; page <= 20; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+
+    if (error) {
+      throw new Error(`Could not search existing portal users: ${error.message}`);
+    }
+
+    const found = data.users.find((candidate) => candidate.email?.toLowerCase() === normalizedEmail);
+
+    if (found || data.users.length < perPage) {
+      return found || null;
+    }
+  }
+
+  return null;
 }
 
 async function getSignedInPortalUser(returnTo: string) {
@@ -662,25 +684,65 @@ export async function createPortalCredential(formData: FormData) {
     errorRedirect(returnTo, "Only a super admin can create another admin account.");
   }
 
+  const authMetadata = {
+    full_name: fullName,
+    phone,
+    company_name: companyName || undefined,
+    job_title: jobTitle || undefined,
+    department: department || undefined,
+  };
+
+  let authAction: "created" | "updated" = "created";
+  let createdUser: User;
+
   const createResult = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
     phone: phone || undefined,
-    user_metadata: {
-      full_name: fullName,
-      phone,
-      company_name: companyName || undefined,
-      job_title: jobTitle || undefined,
-      department: department || undefined,
+    app_metadata: {
+      portal_role: role,
     },
+    user_metadata: authMetadata,
   });
 
-  if (createResult.error || !createResult.data.user) {
-    errorRedirect(returnTo, createResult.error?.message || "Could not create Supabase Auth user.");
+  if (!createResult.error && createResult.data.user) {
+    createdUser = createResult.data.user;
+  } else {
+    const message = createResult.error?.message.toLowerCase() || "";
+
+    if (!message.includes("already") && !message.includes("registered")) {
+      errorRedirect(returnTo, createResult.error?.message || "Could not create Supabase Auth user.");
+    }
+
+    const existingUser = await findAuthUserByEmail(supabase, email);
+
+    if (!existingUser) {
+      errorRedirect(returnTo, "Supabase says this email exists, but the user could not be found for role repair.");
+    }
+
+    const updateResult = await supabase.auth.admin.updateUserById(existingUser.id, {
+      password,
+      email_confirm: true,
+      phone: phone || undefined,
+      app_metadata: {
+        ...(existingUser.app_metadata || {}),
+        portal_role: role,
+      },
+      user_metadata: {
+        ...(existingUser.user_metadata || {}),
+        ...authMetadata,
+      },
+    });
+
+    if (updateResult.error) {
+      errorRedirect(returnTo, `Could not update the existing portal user: ${updateResult.error.message}`);
+    }
+
+    authAction = "updated";
+    createdUser = updateResult.data.user || existingUser;
   }
 
-  const createdUser = createResult.data.user;
   const profileResult = await supabase.from("profiles").upsert(
     {
       id: createdUser.id,
@@ -688,9 +750,9 @@ export async function createPortalCredential(formData: FormData) {
       email,
       phone,
       role,
-      company_name: companyName || null,
-      job_title: jobTitle || null,
-      department: department || null,
+      company_name: companyName || undefined,
+      job_title: jobTitle || undefined,
+      department: department || undefined,
       is_active: true,
       updated_at: new Date().toISOString(),
     },
@@ -698,8 +760,16 @@ export async function createPortalCredential(formData: FormData) {
   );
 
   if (profileResult.error) {
-    await supabase.auth.admin.deleteUser(createdUser.id);
-    errorRedirect(returnTo, `Auth user was created but profile storage failed. Rolled back login. ${profileResult.error.message}`);
+    if (authAction === "created") {
+      await supabase.auth.admin.deleteUser(createdUser.id);
+    }
+
+    errorRedirect(
+      returnTo,
+      authAction === "created"
+        ? `Auth user was created but profile storage failed. Rolled back login. ${profileResult.error.message}`
+        : `Existing Auth user was found, but profile role repair failed. ${profileResult.error.message}`,
+    );
   }
 
   if (role === "business_client" || role === "individual_client") {
@@ -736,6 +806,7 @@ export async function createPortalCredential(formData: FormData) {
     created_by: adminUser.id,
     email,
     role,
+    action: authAction,
     source_request_id: sourceRequestId,
     notes: notes || null,
   });
@@ -744,7 +815,7 @@ export async function createPortalCredential(formData: FormData) {
     actorId: adminUser.id,
     email,
     eventType: "credential_created",
-    metadata: { createdUserId: createdUser.id, role, companyName, requestId: sourceRequestId },
+    metadata: { createdUserId: createdUser.id, role, companyName, requestId: sourceRequestId, action: authAction },
   });
 
   if (sourceRequestId) {
@@ -772,7 +843,12 @@ export async function createPortalCredential(formData: FormData) {
       .eq("status", "new");
   }
 
-  noticeRedirect(returnTo, `Credential created for ${email}. Share the temporary password securely.`);
+  noticeRedirect(
+    returnTo,
+    authAction === "created"
+      ? `Credential created for ${email}. Share the temporary password securely.`
+      : `Existing credential updated for ${email}. The profile role is now ${role}.`,
+  );
 }
 
 export async function sendPortalPasswordReset(formData: FormData) {

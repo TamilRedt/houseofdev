@@ -354,7 +354,7 @@ function demoDashboard(kind: PortalKind, mode: PortalMode, notices: string[], pr
   };
 }
 
-async function loadProfile(db: SupabaseClient, user: AuthUser): Promise<PortalProfile> {
+async function loadProfile(db: SupabaseClient, user: AuthUser): Promise<PortalProfile | null> {
   const { data, error } = await db
     .from("profiles")
     .select("id, full_name, email, role, company_name")
@@ -371,13 +371,11 @@ async function loadProfile(db: SupabaseClient, user: AuthUser): Promise<PortalPr
     };
   }
 
-  return {
-    id: user.id,
-    fullName: user.user_metadata?.full_name || user.user_metadata?.name || user.email || "Portal User",
-    email: user.email || "",
-    role: "individual_client",
-    companyName: user.user_metadata?.company_name || null,
-  };
+  if (error) {
+    console.error("Portal profile lookup failed", error.message);
+  }
+
+  return null;
 }
 
 function isMissingSchemaFeature(error?: { message?: string } | null) {
@@ -700,6 +698,7 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
     careerCount,
     profileCount,
     activityCount,
+    credentialCount,
     clientAccountCount,
     assignmentCount,
     xpCount,
@@ -715,6 +714,8 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
     careerResult,
     projectResult,
     invoiceResult,
+    credentialResult,
+    activityResult,
   ] = await Promise.all([
     countRows(db, "consultation_requests", notices, "Consultation count"),
     countRows(db, "portal_access_requests", notices, "Portal access count"),
@@ -723,6 +724,7 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
     countRows(db, "career_applications", notices, "Career count"),
     countRows(db, "profiles", notices, "Profile count"),
     countRows(db, "portal_activity_logs", notices, "Activity log count"),
+    countRows(db, "portal_credential_events", notices, "Credential event count"),
     countRows(db, "client_accounts", notices, "Client account count"),
     countRows(db, "project_members", notices, "Project assignment count"),
     countRows(db, "employee_xp_events", notices, "EXP count"),
@@ -770,6 +772,16 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
       .select("invoice_number, amount, currency, status, due_date, created_at")
       .order("created_at", { ascending: false })
       .limit(6),
+    db
+      .from("portal_credential_events")
+      .select("email, role, action, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    db
+      .from("portal_activity_logs")
+      .select("email, event_type, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(8),
   ]);
 
   addError(notices, "Consultation requests", consultationResult.error);
@@ -780,12 +792,14 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
   addError(notices, "Recent careers", careerResult.error);
   addError(notices, "Recent projects", projectResult.error);
   addError(notices, "Recent invoices", invoiceResult.error);
+  addError(notices, "Credential events", credentialResult.error);
+  addError(notices, "Portal activity", activityResult.error);
 
   return {
     ...demoDashboard("admin", "live", notices, profile),
     stats: [
       { label: "Consultations", value: String(consultationCount), helper: `${accessCount} access requests, ${contactCount} leads, ${careerCount} careers` },
-      { label: "Users", value: String(profileCount), helper: `${clientAccountCount} client accounts, ${changeCount} change requests` },
+      { label: "Users", value: String(profileCount), helper: `${clientAccountCount} client accounts, ${credentialCount} credential events` },
       { label: "Delivery", value: String(projectCount), helper: `${assignmentCount} employee assignments, ${xpCount} EXP records` },
       { label: "Finance", value: `${invoiceCount}/${paymentCount}`, helper: `${ticketCount} support tickets, ${activityCount} activity logs` },
     ],
@@ -818,7 +832,7 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
       },
       {
         title: "Users, Changes, Careers, Projects, and Finance",
-        description: "Recent users, account changes, hiring, delivery, and billing records.",
+        description: `Recent users, account changes, hiring, delivery, billing records, and ${changeCount} account change requests.`,
         columns: ["Item", "Type", "Status", "Signal"],
         rows: [
           ...asRows(changeResult.data || [], (request) => [
@@ -853,6 +867,26 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
           ]),
         ],
         emptyText: "No operational records yet.",
+      },
+      {
+        title: "Credential and Portal Activity",
+        description: "Recent account creation, role repair, login, logout, and request activity.",
+        columns: ["Email", "Event", "Status", "When"],
+        rows: [
+          ...asRows(credentialResult.data || [], (event) => [
+            String(event.email || "-"),
+            `${humanize(event.action)} ${humanize(event.role)}`.trim(),
+            "Credential",
+            formatDate(event.created_at),
+          ]),
+          ...asRows(activityResult.data || [], (event) => [
+            String(event.email || "-"),
+            humanize(event.event_type),
+            humanize(event.status),
+            formatDate(event.created_at),
+          ]),
+        ],
+        emptyText: "No credential or activity events yet.",
       },
     ],
   };
@@ -892,6 +926,11 @@ export async function getPortalDashboard(kind: PortalKind): Promise<PortalDashbo
 
   const db = getSupabaseAdmin() || serverClient;
   const profile = await loadProfile(db, user);
+
+  if (!profile) {
+    notices.push("Your login exists, but the portal profile role is missing. Ask a super admin to create or repair your portal credential.");
+    return accessDashboard(kind, "unauthorized", notices, null);
+  }
 
   if (!canAccessPortal(kind, profile.role)) {
     notices.push(

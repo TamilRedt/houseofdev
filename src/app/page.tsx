@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { ButtonLink } from "@/components/button-link";
 import { Container } from "@/components/container";
 import { HeroVisual } from "@/components/hero-visual";
+import { LiveSignalStrip } from "@/components/live-signal-strip";
 import { ProjectVisual } from "@/components/project-visual";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SectionHeader } from "@/components/section-header";
@@ -73,6 +74,8 @@ export default function Home() {
           ))}
         </Container>
       </section>
+
+      <LiveSignalStrip />
 
       <WebsiteShowcaseSlider />
 
