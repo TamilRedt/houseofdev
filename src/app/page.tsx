@@ -8,6 +8,7 @@ import { LiveSignalStrip } from "@/components/live-signal-strip";
 import { ProjectVisual } from "@/components/project-visual";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SectionHeader } from "@/components/section-header";
+import { SlidingServiceRail } from "@/components/sliding-service-rail";
 import { StatCounter } from "@/components/stat-counter";
 import { WebsiteShowcaseSlider } from "@/components/website-showcase-slider";
 import { getIcon } from "@/lib/icons";
@@ -76,6 +77,8 @@ export default function Home() {
       </section>
 
       <LiveSignalStrip />
+
+      <SlidingServiceRail />
 
       <WebsiteShowcaseSlider />
 

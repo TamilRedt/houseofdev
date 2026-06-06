@@ -241,6 +241,11 @@ function cleanCredentialRole(value: FormDataEntryValue | null): UserRole | null 
   return credentialRoles.has(role) ? role : null;
 }
 
+function cleanProfileId(value: FormDataEntryValue | null) {
+  const id = String(value || "").trim();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) ? id : null;
+}
+
 function parseCreditAmount(value: FormDataEntryValue | null) {
   const raw = String(value || "").trim();
 
@@ -849,6 +854,219 @@ export async function createPortalCredential(formData: FormData) {
       ? `Credential created for ${email}. Share the temporary password securely.`
       : `Existing credential updated for ${email}. The profile role is now ${role}.`,
   );
+}
+
+export async function updatePortalCredential(formData: FormData) {
+  const returnTo = "/admin-dashboard";
+  const limited = await assertRateLimit("portal-update-user");
+
+  if (!limited) {
+    errorRedirect(returnTo, "Too many credential updates. Please wait a minute and try again.");
+  }
+
+  const { user: adminUser, role: adminRole } = await getSignedInPortalUser(returnTo);
+
+  if (!adminRoles.has(adminRole)) {
+    errorRedirect(returnTo, "Only admin accounts can update portal credentials.");
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    errorRedirect(returnTo, "Supabase service role key is required before admins can update credentials.");
+  }
+
+  const profileId = cleanProfileId(formData.get("profileId"));
+  const fullName = String(formData.get("fullName") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+  const password = String(formData.get("password") || "");
+  const role = cleanCredentialRole(formData.get("role"));
+  const companyName = String(formData.get("companyName") || "").trim();
+  const jobTitle = String(formData.get("jobTitle") || "").trim();
+  const department = String(formData.get("department") || "").trim();
+  const notes = String(formData.get("notes") || "").trim();
+
+  if (!profileId || fullName.length < 2 || !role) {
+    errorRedirect(returnTo, "Choose a user, enter the full name, and select a valid role.");
+  }
+
+  const profileResult = await supabase
+    .from("profiles")
+    .select("id, email, role")
+    .eq("id", profileId)
+    .maybeSingle();
+
+  if (profileResult.error || !profileResult.data) {
+    errorRedirect(returnTo, profileResult.error?.message || "Could not find that portal profile.");
+  }
+
+  const currentRole = profileResult.data.role as UserRole;
+
+  if (currentRole === "super_admin") {
+    errorRedirect(returnTo, "Super admin credentials cannot be modified from this panel.");
+  }
+
+  if (role === "admin" && adminRole !== "super_admin") {
+    errorRedirect(returnTo, "Only a super admin can promote a user to admin.");
+  }
+
+  const updateProfileResult = await supabase
+    .from("profiles")
+    .update({
+      full_name: fullName,
+      phone: phone || null,
+      role,
+      company_name: companyName || null,
+      job_title: jobTitle || null,
+      department: department || null,
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", profileId);
+
+  if (updateProfileResult.error) {
+    errorRedirect(returnTo, `Could not update profile role: ${updateProfileResult.error.message}`);
+  }
+
+  const existingAuthResult = await supabase.auth.admin.getUserById(profileId);
+
+  if (existingAuthResult.error || !existingAuthResult.data.user) {
+    errorRedirect(returnTo, existingAuthResult.error?.message || "Could not find the matching Auth credential.");
+  }
+
+  const existingAuthUser = existingAuthResult.data.user;
+  const authUpdate: {
+    password?: string;
+    phone?: string;
+    app_metadata: Record<string, unknown>;
+    user_metadata: Record<string, unknown>;
+  } = {
+    phone: phone || undefined,
+    app_metadata: {
+      ...(existingAuthUser.app_metadata || {}),
+      portal_role: role,
+    },
+    user_metadata: {
+      ...(existingAuthUser.user_metadata || {}),
+      full_name: fullName,
+      phone: phone || undefined,
+      company_name: companyName || undefined,
+      job_title: jobTitle || undefined,
+      department: department || undefined,
+    },
+  };
+
+  if (password) {
+    if (password.length < 8) {
+      errorRedirect(returnTo, "Use a password with at least 8 characters.");
+    }
+
+    authUpdate.password = password;
+  }
+
+  const authResult = await supabase.auth.admin.updateUserById(profileId, authUpdate);
+
+  if (authResult.error) {
+    errorRedirect(returnTo, `Profile updated, but Auth credential update failed: ${authResult.error.message}`);
+  }
+
+  await supabase.from("portal_credential_events").insert({
+    auth_user_id: profileId,
+    created_by: adminUser.id,
+    email: String(profileResult.data.email || ""),
+    role,
+    action: "updated",
+    notes: notes || null,
+  });
+
+  await logPortalActivity({
+    actorId: adminUser.id,
+    email: String(profileResult.data.email || ""),
+    eventType: "credential_updated",
+    metadata: { profileId, previousRole: currentRole, role, passwordChanged: Boolean(password) },
+  });
+
+  noticeRedirect(returnTo, `Credential updated for ${profileResult.data.email}.`);
+}
+
+export async function deletePortalCredential(formData: FormData) {
+  const returnTo = "/admin-dashboard";
+  const limited = await assertRateLimit("portal-delete-user");
+
+  if (!limited) {
+    errorRedirect(returnTo, "Too many delete attempts. Please wait a minute and try again.");
+  }
+
+  const { user: adminUser, role: adminRole } = await getSignedInPortalUser(returnTo);
+
+  if (!adminRoles.has(adminRole)) {
+    errorRedirect(returnTo, "Only admin accounts can delete portal credentials.");
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    errorRedirect(returnTo, "Supabase service role key is required before admins can delete credentials.");
+  }
+
+  const profileId = cleanProfileId(formData.get("profileId"));
+  const confirmEmail = String(formData.get("confirmEmail") || "").trim().toLowerCase();
+
+  if (!profileId || !confirmEmail) {
+    errorRedirect(returnTo, "Choose a user and type the account email to confirm deletion.");
+  }
+
+  if (profileId === adminUser.id) {
+    errorRedirect(returnTo, "You cannot delete your own signed-in credential.");
+  }
+
+  const profileResult = await supabase
+    .from("profiles")
+    .select("id, email, role")
+    .eq("id", profileId)
+    .maybeSingle();
+
+  if (profileResult.error || !profileResult.data) {
+    errorRedirect(returnTo, profileResult.error?.message || "Could not find that portal profile.");
+  }
+
+  const email = String(profileResult.data.email || "").toLowerCase();
+  const targetRole = profileResult.data.role as UserRole;
+
+  if (email !== confirmEmail) {
+    errorRedirect(returnTo, "Confirmation email does not match the selected user.");
+  }
+
+  if (targetRole === "super_admin") {
+    errorRedirect(returnTo, "Super admin credentials cannot be deleted from this panel.");
+  }
+
+  if (targetRole === "admin" && adminRole !== "super_admin") {
+    errorRedirect(returnTo, "Only a super admin can delete admin credentials.");
+  }
+
+  const deleteResult = await supabase.auth.admin.deleteUser(profileId);
+
+  if (deleteResult.error) {
+    errorRedirect(returnTo, `Could not delete Auth user: ${deleteResult.error.message}`);
+  }
+
+  await supabase.from("portal_credential_events").insert({
+    auth_user_id: null,
+    created_by: adminUser.id,
+    email,
+    role: targetRole,
+    action: "deleted",
+  });
+
+  await logPortalActivity({
+    actorId: adminUser.id,
+    email,
+    eventType: "credential_deleted",
+    metadata: { deletedUserId: profileId, role: targetRole },
+  });
+
+  noticeRedirect(returnTo, `Credential deleted for ${email}.`);
 }
 
 export async function sendPortalPasswordReset(formData: FormData) {

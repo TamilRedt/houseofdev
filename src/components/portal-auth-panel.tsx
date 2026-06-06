@@ -7,6 +7,7 @@ import {
   signOutFromPortal,
   submitAccountChangeRequest,
 } from "@/app/portal-actions";
+import { AdminCredentialManager } from "@/components/admin-credential-manager";
 import { PasswordField } from "@/components/password-field";
 import { getPortalRoleLabel, getPortalRoute, type PortalDashboardData } from "@/lib/portal";
 
@@ -20,7 +21,8 @@ export function PortalAuthPanel({ dashboard, authError }: PortalAuthPanelProps) 
   const showLogin = dashboard.mode === "signed_out";
   const showSignedIn = dashboard.profile && (dashboard.mode === "live" || dashboard.mode === "unauthorized");
   const showAttendance = dashboard.mode === "live" && dashboard.kind === "employee";
-  const showCredentialForm = dashboard.mode === "live" && dashboard.kind === "admin";
+  const showAdminCredentialManager = dashboard.mode === "live" && dashboard.kind === "admin";
+  const showCredentialForm = false;
   const showAccountChangeForm = dashboard.mode === "live" && dashboard.kind === "client";
   const canCreateAdmin = dashboard.profile?.role === "super_admin";
 
@@ -74,6 +76,14 @@ export function PortalAuthPanel({ dashboard, authError }: PortalAuthPanelProps) 
             </button>
           </form>
         </div>
+      ) : null}
+
+      {showAdminCredentialManager ? (
+        <AdminCredentialManager
+          requests={dashboard.credentialRequests}
+          users={dashboard.credentialUsers}
+          canCreateAdmin={canCreateAdmin}
+        />
       ) : null}
 
       {showAttendance ? (
