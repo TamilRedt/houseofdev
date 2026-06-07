@@ -2,7 +2,7 @@
 
 Premium digital agency website and business management foundation built with Next.js 16, TypeScript, Tailwind CSS, Framer Motion, Supabase, PostgreSQL, AWS SES, React Hook Form, Zod, Server Actions.
 
-**Live Website:** [https://houseofdev-mauve.vercel.app](https://houseofdev-mauve.vercel.app)
+**Live Website:** https://houseofdev-8xymz9d9s-tamilredts-projects.vercel.app
 
 ## What Is Included
 
