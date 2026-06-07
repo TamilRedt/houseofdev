@@ -1,19 +1,20 @@
 # HouseOfDev
 
-Premium digital agency website and business management foundation built with Next.js 16, TypeScript, Tailwind CSS, Framer Motion, Supabase, PostgreSQL, AWS SES, React Hook Form, Zod, Server Actions.
+Premium local-business website and portal foundation built with Next.js 16, TypeScript, Tailwind CSS, Framer Motion, Supabase, PostgreSQL, AWS SES, React Hook Form, Zod, and Server Actions.
 
 **Live Website:** https://houseofdev-8xymz9d9s-tamilredts-projects.vercel.app
 
 ## What Is Included
 
-- Premium responsive agency website with sticky navigation, mega menu, mobile navigation, animated statistics, structured CTAs, and polished route-level pages.
+- Premium responsive homepage with six focused sections: Hero, Services, Demo Work, Process, Pricing, and Contact/WhatsApp CTA.
+- Mobile-safe layout with overflow guards, zoom-resistant cards/forms, sticky mobile CTA, and a compact dark navigation experience.
 - Public pages: Home, Services, Industries, Solutions, Portfolio, Pricing, About Us, Careers, Blog, Contact.
 - Dynamic detail pages for services, industries, solutions, portfolio projects, and blog posts.
 - Blog explorer with search, categories, tags, related posts, and comment-ready UI.
-- Contact, consultation, and career forms using React Hook Form, Zod validation, Server Actions, Supabase inserts, email/Telegram/WhatsApp notifications, honeypot spam control, and basic rate limiting.
-- Client portal, employee portal, and admin dashboard routes with Supabase Auth, role checks, admin-only credential creation, request-first account access, client credits, employee attendance, project assignments, account change requests, activity logs, reviews, and EXP records.
+- Homepage lead, contact, consultation, portal access, and career forms using Zod validation, Server Actions, Supabase inserts, email/Telegram/WhatsApp notifications, honeypot spam control, and basic rate limiting.
+- Client portal, employee portal, and admin dashboard routes with Supabase Auth, role checks, admin-only credential create/update/delete, request-first account access, client credits, employee attendance, project assignments, account change requests, activity logs, reviews, and EXP records.
 - SEO foundations: dynamic metadata, Open Graph route image, Twitter cards, organization schema, local business schema, sitemap, and robots.txt.
-- Production docs, environment template, Supabase/PostgreSQL schema, and portal user setup command.
+- Production docs, environment template, Supabase/PostgreSQL migrations, and portal user setup command.
 
 ## Tech Stack
 
@@ -57,23 +58,32 @@ npm run create:portal-user -- --email admin@houseofdev.com --password "StrongPas
 
 See `docs/PORTAL_USERS.md` for client, employee, and admin examples.
 
-For an existing Supabase database, run `database/portal-system-migration.sql` once to add consultation requests, portal access requests, admin credential audit events, portal activity logs, account change requests, notification events, client credit tables, employee assignments, attendance, project reviews, and EXP tracking.
+For an existing Supabase database, run these migrations in order:
+
+1. `database/portal-auth-migration.sql`
+2. `database/portal-system-migration.sql`
+3. `database/homepage-growth-migration.sql`
+
+The homepage migration adds `leads`, `packages`, `demo_projects`, `testimonials`, `site_settings`, and `bookings`. Public visitors can only read active package/demo/testimonial content. Lead, booking, and settings data are private and are written through server-side actions.
+
+Do not delete live Supabase tables unless there is a verified backup and an explicit cleanup plan. Current production data uses `contact_requests`, `consultation_requests`, `leads`, `profiles`, Auth users, and portal audit tables.
 
 ## Folder Structure
 
 ```text
 src/app
-  actions.ts                  Server Actions for contact and careers
-  portal-actions.ts           Server Actions for portal sign-in and sign-out
+  actions.ts                  Server Actions for homepage leads, contact, and careers
+  portal-actions.ts           Server Actions for portal sign-in, credential management, and portal workflows
   api/health                  Health check route
   services/[slug]             Dynamic service detail routes
   industries/[slug]           Dynamic industry routes
   solutions/[slug]            Dynamic solution routes
   portfolio/[slug]            Dynamic portfolio routes
   blog/[slug]                 Dynamic blog routes
-src/components                Reusable UI, forms, navigation, visuals
-src/lib                       Data, SEO, validation, Supabase, AWS, portal data, utilities
+src/components                Reusable UI, forms, navigation, homepage, portal, and visual components
+src/lib                       Data, homepage content, SEO, validation, Supabase, AWS, portal data, utilities
 database/schema.sql           Supabase/PostgreSQL schema and RLS starter
+database/homepage-growth-migration.sql  Homepage content and lead capture tables
 database/portal-system-migration.sql  Idempotent portal database repair/migration
 docs/DEPLOYMENT.md            Vercel/Supabase/AWS deployment guide
 docs/PRODUCTION_SETUP.md      Production hardening checklist
@@ -87,6 +97,8 @@ npm run lint
 npm run build
 ```
 
+Before deploying UI changes, check desktop and mobile widths. The homepage is designed to stay stable at common mobile widths and browser zoom levels without horizontal page overflow.
+
 ## Deployment
 
-See `docs/DEPLOYMENT.md`.
+Push to `main` to trigger the connected Vercel production deployment for [https://houseofdev-mauve.vercel.app](https://houseofdev-mauve.vercel.app). See `docs/DEPLOYMENT.md`.

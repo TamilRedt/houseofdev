@@ -21,6 +21,23 @@ body {
   font-family: "Geist", "Inter", "Poppins", ui-sans-serif, system-ui, sans-serif;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+main {
+  overflow-x: clip;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
 ::selection {
   background: rgba(16, 185, 129, 0.24);
   color: #0f172a;

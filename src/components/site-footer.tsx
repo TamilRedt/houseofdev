@@ -6,7 +6,7 @@ import { Container } from "@/components/container";
 export function SiteFooter() {
   return (
     <footer className="border-t border-slate-200 bg-slate-950 text-white">
-      <Container className="py-14">
+      <Container className="pb-28 pt-14 md:pb-14">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr]">
           <div>
             <Link href="/" className="flex items-center gap-3">
@@ -67,7 +67,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} HouseOfDev. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} HouseOfDev. All rights reserved.</p>
           <p>Built with Next.js 16, TypeScript, Supabase, AWS, and Vercel.</p>
         </div>
       </Container>

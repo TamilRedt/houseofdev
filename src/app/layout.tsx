@@ -13,9 +13,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en-IN">
-      <body className="bg-white text-slate-950 antialiased">
+      <body className="overflow-x-clip bg-white text-slate-950 antialiased">
         <SiteHeader />
-        <main>{children}</main>
+        <main className="overflow-x-clip">{children}</main>
         <SiteFooter />
         <script
           type="application/ld+json"

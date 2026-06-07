@@ -20,11 +20,11 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050816]/88 text-white backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-3" aria-label="HouseOfDev home">
+        <Link href="/" className="flex min-w-0 shrink-0 items-center gap-3" aria-label="HouseOfDev home">
           <span className="grid h-9 w-9 place-items-center rounded-md bg-white text-sm font-bold text-slate-950">
             HD
           </span>
-          <span className="text-base font-semibold tracking-normal">HouseOfDev</span>
+          <span className="truncate text-base font-semibold tracking-normal">HouseOfDev</span>
         </Link>
 
         <nav className="hidden items-center justify-center gap-1 lg:flex" aria-label="Main navigation">
@@ -40,7 +40,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden shrink-0 items-center gap-2 lg:flex">
-          <PortalAuthDialog />
+          <PortalAuthDialog triggerTone="dark" />
           <Link
             href="/#contact"
             className="inline-flex h-10 items-center whitespace-nowrap rounded-md bg-sky-300 px-5 text-sm font-bold text-slate-950 shadow-lg shadow-sky-950/20 transition hover:bg-white"
@@ -68,7 +68,7 @@ export function SiteHeader() {
             transition={{ duration: 0.2 }}
             className="overflow-hidden border-t border-white/10 bg-[#050816] lg:hidden"
           >
-            <div className="mx-auto grid max-w-7xl gap-1 px-4 py-4 sm:px-6">
+            <div className="mx-auto grid max-w-7xl gap-1 overflow-x-hidden px-4 py-4 sm:px-6">
               {homeLinks.map((item) => (
                 <Link
                   key={item.href}
@@ -80,7 +80,7 @@ export function SiteHeader() {
                 </Link>
               ))}
               <div className="px-3 py-2">
-                <PortalAuthDialog />
+                <PortalAuthDialog triggerTone="dark" compact />
               </div>
               <Link
                 href="/#contact"
