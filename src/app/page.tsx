@@ -30,19 +30,18 @@ export default function Home() {
         <Container className="grid min-h-[calc(100vh-4rem)] items-center gap-12 py-16 lg:grid-cols-[0.95fr_1.05fr] lg:py-20">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">
-              Premium Digital Agency
+              Web Developer & AI Automation Builder
             </p>
             <h1 className="mt-5 text-balance text-4xl font-semibold tracking-normal text-white sm:text-5xl lg:text-6xl">
-              Transform Your Business Into a Powerful Online Brand
+              Websites, dashboards, and AI automations for local businesses moving online
             </h1>
             <p className="mt-6 max-w-2xl text-pretty text-lg leading-8 text-slate-200">
-              Professional websites, web applications, business automation, cloud solutions, AI
-              integrations, and digital transformation services designed to help businesses grow
-              faster.
+              Tamilarasan builds practical digital systems under HouseOfDev: business websites,
+              booking flows, dashboards, WhatsApp handoffs, and AI-assisted workflows.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <ButtonLink href="/contact" variant="light">
-                Get Free Consultation
+                Start a Project
               </ButtonLink>
               <ButtonLink href="/services" variant="secondary" className="border-white/20 bg-white text-slate-950">
                 View Services
@@ -189,8 +188,8 @@ export default function Home() {
             <div>
               <SectionHeader
                 eyebrow="Portfolio"
-                title="Realistic business outcomes, designed like premium products"
-                description="From clinic bookings to restaurant inquiries and corporate lead generation, every build is structured around measurable business movement."
+                title="Editable project concepts for the systems local businesses ask for"
+                description="These examples show the structure HouseOfDev can build. Replace the sample outcomes with verified client data once real projects are published."
               />
               <div className="mt-8 space-y-3">
                 {featuredProject.results.map((result) => (
@@ -201,7 +200,7 @@ export default function Home() {
                 ))}
               </div>
               <div className="mt-8">
-                <ButtonLink href="/portfolio">View Portfolio</ButtonLink>
+                <ButtonLink href="/projects">View Projects</ButtonLink>
               </div>
             </div>
             <ScrollReveal>
@@ -280,7 +279,7 @@ export default function Home() {
                 Ready to grow online
               </p>
               <h2 className="mt-3 max-w-3xl text-3xl font-semibold text-slate-950">
-                Let us turn your business into a premium digital brand with systems that scale.
+                Let Tamilarasan turn your business idea into a clear website, workflow, dashboard, or AI automation.
               </h2>
             </div>
             <div className="mt-8 lg:mt-0">

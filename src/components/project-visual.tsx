@@ -3,10 +3,10 @@ import type { PortfolioProject } from "@/lib/data";
 
 export function ProjectVisual({ project }: { project: PortfolioProject }) {
   const metrics = [
-    { label: "Requests", value: project.results[0], Icon: MessageSquareText },
-    { label: "Schedule", value: "Live workflow", Icon: CalendarDays },
-    { label: "Analytics", value: "Tracked", Icon: BarChart3 },
-    { label: "Status", value: "Optimized", Icon: CheckCircle2 },
+    { label: "Outcome", value: project.results[0], Icon: MessageSquareText },
+    { label: "Workflow", value: "Editable sample", Icon: CalendarDays },
+    { label: "Analytics", value: "Ready to connect", Icon: BarChart3 },
+    { label: "Status", value: "Concept", Icon: CheckCircle2 },
   ];
 
   return (

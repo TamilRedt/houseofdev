@@ -280,10 +280,10 @@ function demoDashboard(kind: PortalKind, mode: PortalMode, notices: string[], pr
       profile: demoProfile,
       notices,
       stats: [
-        { label: "New Leads", value: "12", helper: "Contact requests" },
-        { label: "Candidates", value: "7", helper: "Career applications" },
-        { label: "Active Projects", value: "6", helper: "Delivery pipeline" },
-        { label: "Open Tickets", value: "9", helper: "Client support" },
+        { label: "New Leads", value: "-", helper: "Connect Supabase for live data" },
+        { label: "Candidates", value: "-", helper: "Connect Supabase for live data" },
+        { label: "Active Projects", value: "-", helper: "Connect Supabase for live data" },
+        { label: "Open Tickets", value: "-", helper: "Connect Supabase for live data" },
       ],
       tables: [
         {
@@ -291,9 +291,9 @@ function demoDashboard(kind: PortalKind, mode: PortalMode, notices: string[], pr
           description: "Recent sales inquiries ready for follow-up.",
           columns: ["Name", "Company", "Service", "Status"],
           rows: [
-            ["Arun Kumar", "BuildPro", "Web Application Development", "New"],
-            ["Priya S", "Smart Academy", "Business Website Development", "Reviewing"],
-            ["Naveen R", "Urban Taste", "AI Chatbot Development", "In Progress"],
+            ["Sample Lead", "Editable Company", "Web Application Development", "New"],
+            ["Sample Lead", "Editable Company", "Business Website Development", "Reviewing"],
+            ["Sample Lead", "Editable Company", "AI Chatbot Development", "In Progress"],
           ],
           emptyText: "No contact requests yet.",
         },
@@ -302,9 +302,9 @@ function demoDashboard(kind: PortalKind, mode: PortalMode, notices: string[], pr
           description: "Projects, invoices, payments, and support workload.",
           columns: ["Area", "Current Signal", "Status", "Owner"],
           rows: [
-            ["Projects", "6 active", "In Progress", "Delivery"],
-            ["Invoices", "INR 2.4L pending", "Reviewing", "Finance"],
-            ["Support", "9 tickets", "New", "Operations"],
+            ["Projects", "Connect live data", "Placeholder", "Delivery"],
+            ["Invoices", "Connect live data", "Placeholder", "Finance"],
+            ["Support", "Connect live data", "Placeholder", "Operations"],
           ],
           emptyText: "No operations data yet.",
         },

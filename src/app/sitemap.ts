@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/industries",
     "/solutions",
     "/portfolio",
+    "/projects",
     "/pricing",
     "/about",
     "/careers",
@@ -21,6 +22,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...industries.map((item) => `/industries/${item.slug}`),
     ...solutions.map((item) => `/solutions/${item.slug}`),
     ...portfolioProjects.map((item) => `/portfolio/${item.slug}`),
+    ...portfolioProjects.map((item) => `/projects/${item.slug}`),
     ...blogPosts.map((item) => `/blog/${item.slug}`),
   ];
 

@@ -1,9 +1,18 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { navItems, services } from "@/lib/data";
 import { Container } from "@/components/container";
 
 export function SiteFooter() {
+  const pathname = usePathname();
+
+  if (pathname === "/portfolio" || pathname === "/projects") {
+    return null;
+  }
+
   return (
     <footer className="border-t border-slate-200 bg-slate-950 text-white">
       <Container className="py-14">

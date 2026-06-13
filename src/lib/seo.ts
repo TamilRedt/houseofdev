@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { absoluteUrl } from "@/lib/utils";
 
-const defaultTitle = "HouseOfDev - Premium Digital Agency in India";
+const defaultTitle = "Tamilarasan - Web Developer & AI Automation Builder";
 const defaultDescription =
-  "HouseOfDev builds premium websites, web applications, AI automation, cloud systems, SEO, branding, and digital transformation solutions for growing businesses.";
+  "Tamilarasan builds websites, dashboards, booking systems, and AI automations through HouseOfDev to help local businesses move online.";
 
 export function createMetadata({
   title,
@@ -41,7 +41,7 @@ export function createMetadata({
           url: absoluteUrl(image),
           width: 1200,
           height: 630,
-          alt: "HouseOfDev premium digital agency",
+          alt: "Tamilarasan HouseOfDev web developer portfolio",
         },
       ],
     },
@@ -64,7 +64,7 @@ export const organizationJsonLd = {
   name: "HouseOfDev",
   url: "https://houseofdev.com",
   logo: "https://houseofdev.com/icon.png",
-  slogan: "Transforming Businesses Into Powerful Digital Brands",
+  slogan: "Websites, business systems, and AI automations for local businesses",
   sameAs: ["https://www.linkedin.com/company/houseofdev"],
   contactPoint: [
     {
@@ -81,7 +81,7 @@ export const localBusinessJsonLd = {
   "@type": "LocalBusiness",
   name: "HouseOfDev",
   description:
-    "Website development, web applications, AI automation, cloud services, SEO, and digital transformation for local businesses and enterprises.",
+    "Website development, dashboards, booking systems, AI automation, SEO foundations, and workflow digitisation for local businesses.",
   areaServed: ["Hosur", "Bangalore", "India"],
   priceRange: "INR 4,999+",
   url: "https://houseofdev.com",

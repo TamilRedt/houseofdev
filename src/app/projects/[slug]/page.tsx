@@ -16,13 +16,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const project = portfolioProjects.find((item) => item.slug === slug);
 
   return createMetadata({
-    title: project?.title || "Portfolio Project",
+    title: project?.title || "Project",
     description: project?.summary,
-    path: `/portfolio/${slug}`,
+    path: `/projects/${slug}`,
   });
 }
 
-export default async function PortfolioDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const project = portfolioProjects.find((item) => item.slug === slug);
 
@@ -42,9 +42,9 @@ export default async function PortfolioDetailPage({ params }: { params: Promise<
           <ProjectVisual project={project} />
           <div className="mt-12 grid gap-6 lg:grid-cols-4">
             {[
-              ["Client Goals", project.goals],
-              ["Features", project.features],
-              ["Technologies Used", project.technologies],
+              ["Business Goals", project.goals],
+              ["Core Features", project.features],
+              ["Technology Stack", project.technologies],
               ["Outcome Notes", project.results],
             ].map(([title, items]) => (
               <div key={String(title)} className="rounded-lg border border-slate-200 p-5 shadow-sm">
@@ -65,4 +65,3 @@ export default async function PortfolioDetailPage({ params }: { params: Promise<
     </>
   );
 }
-
