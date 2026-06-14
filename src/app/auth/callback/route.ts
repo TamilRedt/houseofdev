@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getServerVerifiedPortalRole, setPortalSessionCookies } from "@/lib/portal-session";
 import { getSupabaseServerClient } from "@/lib/supabase";
 
 const allowedNextPaths = new Set(["/portal", "/employee-portal", "/admin-dashboard", "/update-password"]);
@@ -27,6 +28,15 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(`${origin}/portal?portal_error=${encodeURIComponent(error.message)}`);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const role = user ? await getServerVerifiedPortalRole(user.id) : null;
+
+  if (role) {
+    await setPortalSessionCookies(role);
   }
 
   return NextResponse.redirect(`${origin}${next}`);

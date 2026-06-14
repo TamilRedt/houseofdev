@@ -5,6 +5,11 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { sendLeadNotifications, type NotificationResult } from "@/lib/notifications";
 import { getDefaultPortalRouteForRole } from "@/lib/portal";
+import {
+  clearPortalSessionCookies,
+  getServerVerifiedPortalRole,
+  setPortalSessionCookies,
+} from "@/lib/portal-session";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getSupabaseAdmin, getSupabaseServerClient, type UserRole } from "@/lib/supabase";
 
@@ -158,19 +163,7 @@ async function recordNotificationEvents({
 }
 
 async function getSignedInRole(userId: string): Promise<UserRole | null> {
-  const db = getSupabaseAdmin() || (await getSupabaseServerClient());
-
-  if (!db) {
-    return null;
-  }
-
-  const { data } = await db
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle();
-
-  return data?.role ? (data.role as UserRole) : null;
+  return getServerVerifiedPortalRole(userId);
 }
 
 async function findAuthUserByEmail(supabase: SupabaseClient, email: string): Promise<User | null> {
@@ -215,6 +208,8 @@ async function getSignedInPortalUser(returnTo: string) {
   if (!role) {
     errorRedirect(returnTo, "Your account profile is missing. Ask an admin to activate your role.");
   }
+
+  await setPortalSessionCookies(role);
 
   return { user, role };
 }
@@ -359,6 +354,12 @@ export async function signInToPortal(formData: FormData) {
   } = await supabase.auth.getUser();
   const role = user ? await getSignedInRole(user.id) : null;
 
+  if (role) {
+    await setPortalSessionCookies(role);
+  } else {
+    await clearPortalSessionCookies();
+  }
+
   await logPortalActivity({
     actorId: user?.id || null,
     email,
@@ -386,6 +387,7 @@ export async function signOutFromPortal(formData: FormData) {
     await supabase.auth.signOut();
   }
 
+  await clearPortalSessionCookies();
   redirect(returnTo);
 }
 
@@ -1151,5 +1153,6 @@ export async function updatePortalPassword(formData: FormData) {
   });
 
   await supabase.auth.signOut();
+  await clearPortalSessionCookies();
   redirect(`/portal?portal_notice=${encodeURIComponent("Password updated. Sign in with your new password.")}`);
 }
