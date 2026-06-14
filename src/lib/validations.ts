@@ -14,6 +14,17 @@ export const contactSchema = z.object({
   website: z.string().optional(),
 });
 
+export const localLeadSchema = z.object({
+  name: z.string().min(2, "Enter your name"),
+  businessType: z.string().min(2, "Choose your business type"),
+  phone: z.string().min(8, "Enter a valid phone number"),
+  email: z.string().email("Enter a valid email").optional().or(z.literal("")),
+  message: z.string().min(5, "Tell us what you need"),
+  selectedPackage: z.string().optional(),
+  budget: z.string().optional(),
+  website: z.string().optional(),
+});
+
 export const careerSchema = z.object({
   fullName: z.string().min(2, "Enter your full name"),
   email: z.string().email("Enter a valid email"),
@@ -24,5 +35,6 @@ export const careerSchema = z.object({
 });
 
 export type ContactInput = z.infer<typeof contactSchema>;
+export type LocalLeadInput = z.infer<typeof localLeadSchema>;
 export type CareerInput = z.infer<typeof careerSchema>;
 

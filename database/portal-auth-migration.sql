@@ -92,7 +92,11 @@ begin
     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', split_part(new.email, '@', 1), 'Portal User'),
     coalesce(new.email, ''),
     new.raw_user_meta_data->>'phone',
-    'individual_client',
+    case
+      when new.raw_app_meta_data->>'portal_role' in ('super_admin', 'admin', 'employee', 'business_client', 'individual_client')
+        then (new.raw_app_meta_data->>'portal_role')::public.user_role
+      else 'individual_client'::public.user_role
+    end,
     new.raw_user_meta_data->>'company_name'
   )
   on conflict (id) do update
@@ -111,6 +115,13 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
+
+revoke execute on function public.current_user_role() from anon, authenticated;
+revoke execute on function public.is_admin() from anon, authenticated;
+revoke execute on function public.handle_new_user() from anon, authenticated;
+revoke execute on function public.current_user_role() from public;
+revoke execute on function public.is_admin() from public;
+revoke execute on function public.handle_new_user() from public;
 
 alter table public.profiles enable row level security;
 
