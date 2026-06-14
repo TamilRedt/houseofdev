@@ -91,7 +91,7 @@ export default function Home() {
                   <ScrollReveal key={service.slug} delay={index * 0.03}>
                     <Link
                       href={`/services/${service.slug}`}
-                      className="group block rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-950/8"
+                      className="interactive-card group block rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-950/8"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="rounded-md bg-blue-50 p-2 text-blue-700">
@@ -145,7 +145,7 @@ export default function Home() {
                   <Link
                     key={industry.slug}
                     href={`/industries/${industry.slug}`}
-                    className="rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-emerald-400 hover:text-emerald-700"
+                    className="interactive-card rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-emerald-400 hover:text-emerald-700"
                   >
                     {industry.title}
                   </Link>
@@ -171,7 +171,7 @@ export default function Home() {
                 <Link
                   key={solution.slug}
                   href={`/solutions/${solution.slug}`}
-                  className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-950/8"
+                  className="interactive-card rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-950/8"
                 >
                   <Icon className="h-5 w-5 text-blue-600" />
                   <h3 className="mt-4 text-lg font-semibold text-slate-950">{solution.title}</h3>
@@ -227,7 +227,7 @@ export default function Home() {
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {technologyStack.map((item) => (
-                <div key={item} className="rounded-md border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-100">
+                <div key={item} className="interactive-card rounded-md border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:-translate-y-0.5 hover:border-emerald-300/40">
                   {item}
                 </div>
               ))}
@@ -249,7 +249,7 @@ export default function Home() {
               <Link
                 key={item.name}
                 href="/pricing"
-                className={`rounded-lg border p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${
+                className={`interactive-card rounded-lg border p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${
                   item.featured
                     ? "border-blue-500 bg-blue-50 shadow-blue-950/8"
                     : "border-slate-200 bg-white shadow-slate-950/5"
@@ -274,7 +274,7 @@ export default function Home() {
 
       <section className="premium-gradient py-20">
         <Container>
-          <div className="rounded-lg border border-slate-200 bg-white p-8 shadow-xl shadow-slate-950/8 sm:p-10 lg:flex lg:items-center lg:justify-between">
+          <div className="interactive-card rounded-lg border border-slate-200 bg-white p-8 shadow-xl shadow-slate-950/8 sm:p-10 lg:flex lg:items-center lg:justify-between">
             <div>
               <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-600">
                 Ready to grow online

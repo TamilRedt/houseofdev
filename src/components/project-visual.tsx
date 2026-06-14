@@ -10,7 +10,7 @@ export function ProjectVisual({ project }: { project: PortfolioProject }) {
   ];
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-xl shadow-slate-950/8">
+    <div className="interactive-card rounded-lg border border-slate-200 bg-white p-3 shadow-xl shadow-slate-950/8">
       <div className={`rounded-md bg-gradient-to-br ${project.palette} p-1`}>
         <div className="rounded bg-white">
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
@@ -39,7 +39,7 @@ export function ProjectVisual({ project }: { project: PortfolioProject }) {
             <div className="p-4">
               <div className="grid grid-cols-2 gap-3">
                 {metrics.map(({ label, value, Icon }) => (
-                  <div key={label} className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                  <div key={label} className="interactive-card rounded-md border border-slate-200 bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-blue-300">
                     <Icon className="h-4 w-4 text-blue-600" />
                     <p className="mt-3 text-xs text-slate-500">{label}</p>
                     <p className="mt-1 text-sm font-semibold text-slate-950">{value}</p>

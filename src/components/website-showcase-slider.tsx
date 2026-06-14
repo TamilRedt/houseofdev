@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import {
@@ -92,12 +92,24 @@ const websiteSlides = [
 
 export function WebsiteShowcaseSlider() {
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
   const slide = websiteSlides[active];
   const Icon = slide.icon;
 
   function move(direction: number) {
     setActive((current) => (current + direction + websiteSlides.length) % websiteSlides.length);
   }
+
+  useEffect(() => {
+    if (paused) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setActive((current) => (current + 1 + websiteSlides.length) % websiteSlides.length);
+    }, 5200);
+    return () => window.clearInterval(interval);
+  }, [paused]);
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
     if (info.offset.x < -70 || info.velocity.x < -350) {
@@ -143,7 +155,13 @@ export function WebsiteShowcaseSlider() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-950 p-3 shadow-2xl shadow-slate-950/12">
+          <div
+            className="overflow-hidden rounded-lg border border-slate-200 bg-slate-950 p-3 shadow-2xl shadow-slate-950/12"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocus={() => setPaused(true)}
+            onBlur={() => setPaused(false)}
+          >
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={slide.title}
@@ -151,10 +169,10 @@ export function WebsiteShowcaseSlider() {
                 dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.12}
                 onDragEnd={handleDragEnd}
-                initial={{ opacity: 0, x: 44 }}
+                initial={{ opacity: 0, x: 56, scale: 0.985 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -44 }}
-                transition={{ duration: 0.28, ease: "easeOut" }}
+                exit={{ opacity: 0, x: -56, scale: 0.985 }}
+                transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
                 className={`min-h-[460px] cursor-grab rounded-md bg-gradient-to-br ${slide.surface} p-4 active:cursor-grabbing sm:p-6`}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -227,6 +245,15 @@ export function WebsiteShowcaseSlider() {
                   aria-current={index === active ? "true" : undefined}
                 />
               ))}
+            </div>
+            <div className="h-1 overflow-hidden rounded-full bg-white/10">
+              <motion.div
+                key={`${active}-${paused}`}
+                className="h-full origin-left bg-gradient-to-r from-blue-400 to-emerald-300"
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: paused ? 0 : 1 }}
+                transition={{ duration: 5.2, ease: "linear" }}
+              />
             </div>
           </div>
         </div>

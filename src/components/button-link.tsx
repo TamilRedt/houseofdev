@@ -18,7 +18,7 @@ export function ButtonLink({
     <Link
       href={href}
       className={cn(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-semibold transition",
+        "group inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-5 py-3 text-sm font-semibold transition duration-200 hover:-translate-y-0.5 active:translate-y-0",
         variant === "primary" &&
           "bg-slate-950 text-white shadow-lg shadow-slate-950/15 hover:bg-blue-700",
         variant === "secondary" &&
@@ -29,7 +29,7 @@ export function ButtonLink({
       )}
     >
       {children}
-      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden="true" />
     </Link>
   );
 }

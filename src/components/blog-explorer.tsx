@@ -26,7 +26,7 @@ export function BlogExplorer({ posts }: { posts: BlogPost[] }) {
 
   return (
     <div>
-      <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/5 lg:flex-row lg:items-center">
+      <div className="interactive-card flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-xl shadow-slate-950/5 lg:flex-row lg:items-center">
         <label className="relative flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -59,7 +59,7 @@ export function BlogExplorer({ posts }: { posts: BlogPost[] }) {
           <Link
             key={post.slug}
             href={`/blog/${post.slug}`}
-            className="group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-950/8"
+            className="interactive-card group rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-950/8"
           >
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-600">
               <span>{post.category}</span>
@@ -83,7 +83,7 @@ export function BlogExplorer({ posts }: { posts: BlogPost[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="mt-8 rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-500">
+        <div className="interactive-card mt-8 rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-500">
           No articles matched your search.
         </div>
       ) : null}

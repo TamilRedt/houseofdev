@@ -46,7 +46,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
       <section className="premium-gradient py-20">
         <Container>
           <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-950/5">
+            <div className="interactive-card rounded-lg border border-slate-200 bg-white p-6 shadow-xl shadow-slate-950/5">
               <div className="rounded-md bg-blue-50 p-3 text-blue-700 w-fit">
                 <Icon className="h-7 w-7" />
               </div>
@@ -58,7 +58,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
 
             <div className="grid gap-5 md:grid-cols-2">
               {service.benefits.map((benefit) => (
-                <div key={benefit} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                <div key={benefit} className="interactive-card rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-300">
                   <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                   <p className="mt-4 text-sm font-semibold leading-6 text-slate-800">{benefit}</p>
                 </div>
@@ -76,7 +76,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               <h2 className="mt-4 text-3xl font-semibold text-slate-950">A clear delivery path from idea to launch</h2>
               <div className="mt-8 space-y-4">
                 {service.process.map((step, index) => (
-                  <div key={step} className="flex gap-4 rounded-lg border border-slate-200 p-5">
+                  <div key={step} className="interactive-card flex gap-4 rounded-lg border border-slate-200 p-5 transition hover:-translate-y-0.5 hover:border-blue-300">
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-slate-950 text-sm font-semibold text-white">
                       {index + 1}
                     </span>
@@ -91,7 +91,7 @@ export default async function ServiceDetailPage({ params }: { params: Promise<{ 
               <h2 className="mt-4 text-3xl font-semibold text-slate-950">Questions before starting</h2>
               <div className="mt-8 space-y-4">
                 {service.faq.map((item) => (
-                  <div key={item.question} className="rounded-lg border border-slate-200 p-5">
+                  <div key={item.question} className="interactive-card rounded-lg border border-slate-200 p-5 transition hover:-translate-y-0.5 hover:border-blue-300">
                     <div className="flex items-start gap-3">
                       <HelpCircle className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
                       <div>

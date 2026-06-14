@@ -33,7 +33,7 @@ export default function AboutPage() {
       <section className="bg-white py-20">
         <Container>
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            <div className="overflow-hidden rounded-lg border border-slate-200">
+            <div className="interactive-card overflow-hidden rounded-lg border border-slate-200">
               <Image
                 src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1400&q=80"
                 alt="HouseOfDev team strategy workshop"
@@ -49,13 +49,13 @@ export default function AboutPage() {
                 description="Our mission is to help local businesses, startups, consultants, retail stores, institutions, and enterprises become stronger digital brands with practical, scalable technology."
               />
               <div className="mt-8 grid gap-5 sm:grid-cols-2">
-                <div className="rounded-lg border border-slate-200 p-5">
+                <div className="interactive-card rounded-lg border border-slate-200 p-5 transition hover:-translate-y-0.5 hover:border-blue-300">
                   <h3 className="font-semibold text-slate-950">Vision</h3>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
                     Become a trusted digital transformation partner for businesses that want premium execution without unnecessary complexity.
                   </p>
                 </div>
-                <div className="rounded-lg border border-slate-200 p-5">
+                <div className="interactive-card rounded-lg border border-slate-200 p-5 transition hover:-translate-y-0.5 hover:border-blue-300">
                   <h3 className="font-semibold text-slate-950">Values</h3>
                   <div className="mt-3 space-y-2">
                     {values.map((value) => (
@@ -83,7 +83,7 @@ export default function AboutPage() {
               />
               <div className="mt-8 grid gap-3">
                 {process.map((step, index) => (
-                  <div key={step} className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4">
+                  <div key={step} className="interactive-card flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-blue-300">
                     <span className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 text-sm font-semibold text-white">
                       {index + 1}
                     </span>
@@ -100,7 +100,7 @@ export default function AboutPage() {
               />
               <div className="mt-8 grid grid-cols-2 gap-3">
                 {technologyStack.map((tech) => (
-                  <div key={tech} className="rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                  <div key={tech} className="interactive-card rounded-md border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:-translate-y-0.5 hover:border-emerald-300">
                     {tech}
                   </div>
                 ))}
@@ -119,7 +119,7 @@ export default function AboutPage() {
           />
           <div className="mt-10 grid gap-4">
             {timeline.map((item, index) => (
-              <div key={item} className="grid gap-4 rounded-lg border border-slate-200 p-5 sm:grid-cols-[120px_1fr]">
+              <div key={item} className="interactive-card grid gap-4 rounded-lg border border-slate-200 p-5 transition hover:-translate-y-0.5 hover:border-blue-300 sm:grid-cols-[120px_1fr]">
                 <p className="font-mono text-sm font-semibold text-blue-700">Phase {index + 1}</p>
                 <p className="text-sm leading-6 text-slate-700">{item}</p>
               </div>

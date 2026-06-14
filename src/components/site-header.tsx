@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
 import { PortalAuthDialog } from "@/components/portal-auth-dialog";
 import { industries, navItems, services, solutions } from "@/lib/data";
@@ -125,8 +126,15 @@ export function SiteHeader() {
         </button>
       </div>
 
-      {mobileOpen ? (
-        <div className="border-t border-slate-200 bg-white xl:hidden">
+      <AnimatePresence>
+        {mobileOpen ? (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          className="border-t border-slate-200 bg-white xl:hidden"
+        >
           <div className="mx-auto grid max-w-7xl gap-1 px-5 py-4 sm:px-6">
             {navItems.map((item) => (
               <Link
@@ -149,8 +157,9 @@ export function SiteHeader() {
               Get Free Consultation
             </Link>
           </div>
-        </div>
-      ) : null}
+        </motion.div>
+        ) : null}
+      </AnimatePresence>
     </header>
   );
 }

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { PageTransition } from "@/components/page-transition";
+import { SiteEngagementLayer } from "@/components/site-engagement-layer";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { createMetadata, localBusinessJsonLd, organizationJsonLd } from "@/lib/seo";
@@ -14,8 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en-IN">
       <body className="bg-white text-slate-950 antialiased">
+        <SiteEngagementLayer />
         <SiteHeader />
-        <main>{children}</main>
+        <PageTransition>{children}</PageTransition>
         <SiteFooter />
         <script
           type="application/ld+json"

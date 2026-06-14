@@ -32,7 +32,7 @@ export default function PricingPage() {
             {pricingPackages.map((plan) => (
               <div
                 key={plan.name}
-                className={`rounded-lg border p-6 shadow-xl ${
+                className={`interactive-card rounded-lg border p-6 shadow-xl transition hover:-translate-y-1 ${
                   plan.featured
                     ? "border-blue-500 bg-blue-50 shadow-blue-950/8"
                     : "border-slate-200 bg-white shadow-slate-950/5"
@@ -57,7 +57,7 @@ export default function PricingPage() {
               </div>
             ))}
           </div>
-          <div className="mt-10 rounded-lg border border-slate-200 bg-white p-8 shadow-xl shadow-slate-950/5">
+          <div className="interactive-card mt-10 rounded-lg border border-slate-200 bg-white p-8 shadow-xl shadow-slate-950/5">
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-600">Custom Scope</p>
             <h2 className="mt-3 text-2xl font-semibold text-slate-950">
               Need a SaaS-quality portal, enterprise workflow, or AI automation platform?

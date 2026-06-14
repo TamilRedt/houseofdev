@@ -36,7 +36,7 @@ export default function SolutionsPage() {
                 <Link
                   key={solution.slug}
                   href={`/solutions/${solution.slug}`}
-                  className="group rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-950/8"
+                  className="interactive-card group rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-950/8"
                 >
                   <div className="flex items-start justify-between">
                     <div className="rounded-md bg-emerald-50 p-2 text-emerald-700">

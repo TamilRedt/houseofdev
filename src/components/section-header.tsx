@@ -12,7 +12,7 @@ export function SectionHeader({
   align?: "left" | "center";
 }) {
   return (
-    <div className={cn("max-w-3xl", align === "center" && "mx-auto text-center")}>
+    <div className={cn("soft-slide max-w-3xl", align === "center" && "mx-auto text-center")}>
       {eyebrow ? (
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600">
           {eyebrow}

@@ -42,19 +42,19 @@ export default async function SolutionDetailPage({ params }: { params: Promise<{
       <section className="bg-white py-20">
         <Container>
           <div className="grid gap-8 lg:grid-cols-2">
-            <div className="rounded-lg border border-slate-200 p-6 shadow-xl shadow-slate-950/5">
+            <div className="interactive-card rounded-lg border border-slate-200 p-6 shadow-xl shadow-slate-950/5">
               <Icon className="h-7 w-7 text-blue-600" />
               <h2 className="mt-5 text-2xl font-semibold text-slate-950">Core Modules</h2>
               <div className="mt-6 grid gap-3">
                 {solution.modules.map((module) => (
-                  <div key={module} className="flex items-center gap-3 rounded-md bg-slate-50 px-4 py-3">
+                  <div key={module} className="interactive-card flex items-center gap-3 rounded-md bg-slate-50 px-4 py-3 transition hover:-translate-y-0.5">
                     <Layers3 className="h-4 w-4 text-blue-600" />
                     <span className="text-sm font-semibold text-slate-800">{module}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="rounded-lg border border-slate-200 p-6 shadow-xl shadow-slate-950/5">
+            <div className="interactive-card rounded-lg border border-slate-200 p-6 shadow-xl shadow-slate-950/5">
               <CheckCircle2 className="h-7 w-7 text-emerald-600" />
               <h2 className="mt-5 text-2xl font-semibold text-slate-950">Business Outcomes</h2>
               <div className="mt-6 grid gap-3">

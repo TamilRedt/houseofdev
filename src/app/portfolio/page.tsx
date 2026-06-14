@@ -27,7 +27,7 @@ export default function PortfolioPage() {
             <Link
               key={project.slug}
               href={`/portfolio/${project.slug}`}
-              className="group grid gap-8 rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-950/5 transition hover:-translate-y-1 hover:border-blue-300 lg:grid-cols-[0.95fr_1.05fr]"
+              className="interactive-card group grid gap-8 rounded-lg border border-slate-200 bg-white p-5 shadow-xl shadow-slate-950/5 transition hover:-translate-y-1 hover:border-blue-300 lg:grid-cols-[0.95fr_1.05fr]"
             >
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-600">

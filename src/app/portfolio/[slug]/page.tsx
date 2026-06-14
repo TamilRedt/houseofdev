@@ -47,7 +47,7 @@ export default async function PortfolioDetailPage({ params }: { params: Promise<
               ["Technologies Used", project.technologies],
               ["Results", project.results],
             ].map(([title, items]) => (
-              <div key={String(title)} className="rounded-lg border border-slate-200 p-5 shadow-sm">
+              <div key={String(title)} className="interactive-card rounded-lg border border-slate-200 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300">
                 <h2 className="text-lg font-semibold text-slate-950">{title}</h2>
                 <div className="mt-5 space-y-3">
                   {(items as string[]).map((item) => (

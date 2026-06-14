@@ -28,13 +28,13 @@ export default function ContactPage() {
                 Use the form to request a website, app, automation workflow, cloud setup, AI integration, SEO plan, or full digital transformation roadmap.
               </p>
               <div className="mt-8 space-y-4">
-                <p className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700">
+                <p className="interactive-card flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-blue-300">
                   <Mail className="h-5 w-5 text-blue-600" /> arasanredt@gmail.com
                 </p>
-                <p className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700">
+                <p className="interactive-card flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-blue-300">
                   <PhoneCall className="h-5 w-5 text-blue-600" /> Discovery calls by appointment
                 </p>
-                <p className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700">
+                <p className="interactive-card flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700 transition hover:-translate-y-0.5 hover:border-blue-300">
                   <MapPin className="h-5 w-5 text-blue-600" /> Hosur, Bangalore, and remote across India
                 </p>
               </div>
