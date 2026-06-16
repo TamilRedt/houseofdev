@@ -1,31 +1,11 @@
-import { PortalDashboard } from "@/components/portal-dashboard";
-import { getPortalDashboard } from "@/lib/portal";
-import { createMetadata } from "@/lib/seo";
+import { MemberWorkspacePage } from "@/components/member-workspace-page";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = createMetadata({
-  title: "Employee Portal",
-  description: "Secure employee workspace for HouseOfDev tasks, attendance, leave requests, and operations.",
-  path: "/employee-portal",
-});
+type Props = { searchParams?: Promise<Record<string, string | string[] | undefined>> };
+const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
 
-type PageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-};
-
-function getAuthError(params?: Record<string, string | string[] | undefined>) {
-  const value = params?.portal_error;
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function getAuthNotice(params?: Record<string, string | string[] | undefined>) {
-  const value = params?.portal_notice;
-  return Array.isArray(value) ? value[0] : value;
-}
-
-export default async function EmployeePortalPage({ searchParams }: PageProps) {
-  const [dashboard, params] = await Promise.all([getPortalDashboard("employee"), searchParams]);
-
-  return <PortalDashboard dashboard={dashboard} authError={getAuthError(params)} authNotice={getAuthNotice(params)} />;
+export default async function EmployeePortalPage({ searchParams }: Props) {
+  const params = await searchParams;
+  return <MemberWorkspacePage kind="employee" section="home" authError={first(params?.portal_error)} authNotice={first(params?.portal_notice)} />;
 }
