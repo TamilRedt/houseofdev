@@ -18,5 +18,12 @@ export async function GET() {
   data.invoices.forEach((item) => rows.push(["Invoice", item.number, item.clientName, item.amount, item.status]));
 
   const content = rows.map((row) => row.map(escapeCell).join(",")).join("\n");
-  return new Response(content, { headers: { "content-type": "text/csv; charset=utf-8", "cache-control": "no-store" } });
+  const day = new Date().toISOString().slice(0, 10);
+  return new Response(content, {
+    headers: {
+      "content-type": "text/csv; charset=utf-8",
+      "content-disposition": `attachment; filename="houseofdev-report-${day}.csv"`,
+      "cache-control": "no-store",
+    },
+  });
 }
