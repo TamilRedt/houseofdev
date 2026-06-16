@@ -6,7 +6,7 @@ import { SiteEngagementLayer } from "@/components/site-engagement-layer";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
-const workspaceRoutes = ["/admin-dashboard", "/employee-portal", "/portal"];
+const workspaceRoutes = ["/admin-dashboard", "/employee-portal", "/portal", "/portal-access", "/portal-reset"];
 
 function isWorkspaceRoute(pathname: string) {
   return workspaceRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
