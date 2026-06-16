@@ -3,6 +3,7 @@ import { ArrowLeft, CalendarDays, CheckCircle2, Users } from "lucide-react";
 import { adminAssignEmployee, adminUpdateProject } from "@/app/workspace-actions";
 import { AdminMobileHeader, AdminSidebar } from "@/components/admin-dashboard-navigation";
 import { PortalAccessGate } from "@/components/portal-access-gate";
+import { ProjectRequestList } from "@/components/project-request-list";
 import { getAdminWorkspaceData } from "@/lib/admin-workspace";
 
 export const dynamic = "force-dynamic";
@@ -66,6 +67,8 @@ export default async function AdminProjectWorkspacePage({ params, searchParams }
               <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-xl font-semibold">Assigned delivery team</h2><div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{project.employees.length ? project.employees.map((employee) => <div key={employee.id} className="rounded-2xl bg-slate-50 p-4"><p className="font-semibold">{employee.name}</p><p className="mt-1 text-sm text-slate-500">{employee.role}</p></div>) : <p className="text-sm text-slate-500">No employee has been assigned yet.</p>}</div></section>
 
               <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-xl font-semibold">Recent employee updates</h2><p className="mt-1 text-sm text-slate-500">Daily reviews shared from the employee portal.</p><div className="mt-5 grid gap-3">{data.recentUpdates.filter((update) => update.projectTitle === project.title).length ? data.recentUpdates.filter((update) => update.projectTitle === project.title).map((update) => <article key={update.id} className="rounded-2xl border border-slate-200 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{update.title}</p><span className="text-xs text-slate-500">{update.authorName} · {date(update.createdAt)}</span></div><p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">{update.body}</p></article>) : <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">No daily update has been submitted yet.</p>}</div></section>
+
+              <ProjectRequestList projectId={project.id} />
             </>}
           </main>
         </div>
