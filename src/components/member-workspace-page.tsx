@@ -1,13 +1,27 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, ClipboardCheck, FolderKanban, Home, LogOut, MessageSquareText, Star, TrendingUp } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ClipboardCheck,
+  FolderKanban,
+  Home,
+  LogOut,
+  MessageSquareText,
+  Star,
+  TrendingUp,
+} from "lucide-react";
 import { signOutFromPortal } from "@/app/portal-actions";
-import { submitClientProjectChangeRequest, submitEmployeeProjectUpdate, updateEmployeeTaskStatus } from "@/app/workspace-actions";
+import {
+  submitClientProjectChangeRequest,
+  submitEmployeeProjectUpdate,
+  updateEmployeeTaskStatus,
+} from "@/app/workspace-actions";
 import { BrandLogo } from "@/components/brand-logo";
 import { PortalAccessGate } from "@/components/portal-access-gate";
 import { getMemberWorkspaceData, type MemberWorkspaceData } from "@/lib/member-workspace";
 
 type Kind = "employee" | "client";
-type Section = "home" | "projects" | "tasks" | "reviews" | "updates" | "change-requests";
+type Section = "home" | "projects" | "tasks" | "reviews" | "updates" | "requests" | "change-requests";
 
 const input = "mt-2 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 
@@ -25,28 +39,71 @@ function statusTone(value: string) {
 }
 
 function navigation(kind: Kind) {
-  return kind === "employee" ? [
-    { label: "Home", href: "/employee-portal", icon: Home },
-    { label: "Projects", href: "/employee-portal/projects", icon: FolderKanban },
-    { label: "Tasks", href: "/employee-portal/tasks", icon: ClipboardCheck },
-    { label: "Reviews", href: "/employee-portal/reviews", icon: Star },
-    { label: "Daily updates", href: "/employee-portal/updates", icon: TrendingUp },
-  ] : [
-    { label: "Home", href: "/portal", icon: Home },
-    { label: "Projects", href: "/portal/projects", icon: FolderKanban },
-    { label: "Updates", href: "/portal/updates", icon: TrendingUp },
-    { label: "Change requests", href: "/portal/change-requests", icon: MessageSquareText },
-  ];
+  return kind === "employee"
+    ? [
+        { label: "Home", href: "/employee-portal", icon: Home },
+        { label: "Projects", href: "/employee-portal/projects", icon: FolderKanban },
+        { label: "Tasks", href: "/employee-portal/tasks", icon: ClipboardCheck },
+        { label: "Reviews", href: "/employee-portal/reviews", icon: Star },
+        { label: "Client requests", href: "/employee-portal/requests", icon: MessageSquareText },
+        { label: "Daily updates", href: "/employee-portal/updates", icon: TrendingUp },
+      ]
+    : [
+        { label: "Home", href: "/portal", icon: Home },
+        { label: "Projects", href: "/portal/projects", icon: FolderKanban },
+        { label: "Updates", href: "/portal/updates", icon: TrendingUp },
+        { label: "Change requests", href: "/portal/change-requests", icon: MessageSquareText },
+      ];
 }
 
 function ProgressCard({ project, href }: { project: MemberWorkspaceData["projects"][number]; href: string }) {
-  return <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-semibold text-slate-950">{project.title}</h2><p className="mt-1 text-sm text-slate-500">{project.role} · Due {date(project.dueDate)}</p></div><span className={`rounded-full border px-3 py-1 text-xs font-bold capitalize ${statusTone(project.status)}`}>{project.status.replaceAll("_", " ")}</span></div><p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-600">{project.description}</p><div className="mt-5"><div className="mb-2 flex justify-between text-xs font-bold text-slate-600"><span>Project status</span><span>{project.progress}%</span></div><div className="h-3 rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500" style={{ width: `${project.progress}%` }} /></div></div><div className="mt-4 flex items-center justify-between gap-4"><span className="text-sm text-slate-500">{project.openTasks} open tasks</span><Link href={href} className="inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-violet-700">View updates <ArrowRight className="h-4 w-4" /></Link></div></article>;
+  return (
+    <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-950">{project.title}</h2>
+          <p className="mt-1 text-sm text-slate-500">{project.role} · Due {date(project.dueDate)}</p>
+        </div>
+        <span className={`rounded-full border px-3 py-1 text-xs font-bold capitalize ${statusTone(project.status)}`}>
+          {project.status.replaceAll("_", " ")}
+        </span>
+      </div>
+      <p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-600">{project.description}</p>
+      <div className="mt-5">
+        <div className="mb-2 flex justify-between text-xs font-bold text-slate-600"><span>Project status</span><span>{project.progress}%</span></div>
+        <div className="h-3 rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-blue-500 to-violet-500" style={{ width: `${project.progress}%` }} /></div>
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-4">
+        <span className="text-sm text-slate-500">{project.openTasks} open tasks</span>
+        <Link href={href} className="inline-flex items-center gap-2 text-sm font-bold text-blue-700 hover:text-violet-700">View updates <ArrowRight className="h-4 w-4" /></Link>
+      </div>
+    </article>
+  );
 }
 
 function HomeSection({ kind, data }: { kind: Kind; data: MemberWorkspaceData }) {
   const items = navigation(kind).slice(1);
   const openTasks = data.tasks.filter((task) => !["done", "completed", "closed"].includes(task.status.toLowerCase())).length;
-  return <><div className="grid gap-4 sm:grid-cols-3"><div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-500">Active projects</p><p className="mt-2 text-3xl font-bold">{data.projects.filter((project) => !["completed", "closed"].includes(project.status.toLowerCase())).length}</p></div><div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-500">Open tasks</p><p className="mt-2 text-3xl font-bold">{openTasks}</p></div><div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-500">Recent updates</p><p className="mt-2 text-3xl font-bold">{data.updates.length}</p></div></div><section className="mt-6 rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-violet-950 p-6 text-white sm:p-8"><p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Your workspace</p><h2 className="mt-3 text-2xl font-semibold">Open only the information you need.</h2><div className="mt-6 grid gap-3 md:grid-cols-2">{items.map((item) => { const Icon = item.icon; return <Link key={item.href} href={item.href} className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"><div className="flex items-center justify-between"><span className="inline-flex items-center gap-3 font-semibold"><Icon className="h-5 w-5 text-cyan-300" />{item.label}</span><ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></div></Link>; })}</div></section><div className="mt-6 grid gap-4 xl:grid-cols-2">{data.projects.slice(0, 4).map((project) => <ProgressCard key={project.id} project={project} href={kind === "employee" ? "/employee-portal/updates" : "/portal/updates"} />)}</div></>;
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-500">Active projects</p><p className="mt-2 text-3xl font-bold">{data.projects.filter((project) => !["completed", "closed"].includes(project.status.toLowerCase())).length}</p></div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-500">Open tasks</p><p className="mt-2 text-3xl font-bold">{openTasks}</p></div>
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-slate-500">Recent updates</p><p className="mt-2 text-3xl font-bold">{data.updates.length}</p></div>
+      </div>
+      <section className="mt-6 rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-violet-950 p-6 text-white sm:p-8">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Your workspace</p>
+        <h2 className="mt-3 text-2xl font-semibold">Open only the information you need.</h2>
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
+          {items.map((item) => {
+            const Icon = item.icon;
+            return <Link key={item.href} href={item.href} className="group rounded-2xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10"><div className="flex items-center justify-between"><span className="inline-flex items-center gap-3 font-semibold"><Icon className="h-5 w-5 text-cyan-300" />{item.label}</span><ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></div></Link>;
+          })}
+        </div>
+      </section>
+      <div className="mt-6 grid gap-4 xl:grid-cols-2">{data.projects.slice(0, 4).map((project) => <ProgressCard key={project.id} project={project} href={kind === "employee" ? "/employee-portal/updates" : "/portal/updates"} />)}</div>
+    </>
+  );
 }
 
 function ProjectsSection({ kind, data }: { kind: Kind; data: MemberWorkspaceData }) {
@@ -59,6 +116,23 @@ function TasksSection({ data }: { data: MemberWorkspaceData }) {
 
 function ReviewsSection({ data }: { data: MemberWorkspaceData }) {
   return <div className="grid gap-4 xl:grid-cols-2">{data.reviews.length ? data.reviews.map((review) => <article key={review.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-violet-600">{review.projectTitle}</p><h2 className="mt-2 font-semibold capitalize">{review.type} review</h2></div><span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-bold text-amber-700">{review.rating ? `${review.rating}/5` : "Feedback"}</span></div><p className="mt-4 text-sm leading-6 text-slate-600">{review.review}</p><p className="mt-4 text-xs text-slate-400">{date(review.createdAt)}</p></article>) : <p className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-500">No project reviews are available yet.</p>}</div>;
+}
+
+function RequestsSection({ data }: { data: MemberWorkspaceData }) {
+  return (
+    <div className="grid gap-4 xl:grid-cols-2">
+      {data.tickets.length ? data.tickets.map((ticket) => (
+        <article key={ticket.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-start justify-between gap-4">
+            <div><p className="text-xs font-bold uppercase tracking-[0.14em] text-violet-600">{ticket.projectTitle}</p><h2 className="mt-2 font-semibold">{ticket.subject}</h2></div>
+            <span className={`rounded-full border px-3 py-1 text-xs font-bold capitalize ${statusTone(ticket.status)}`}>{ticket.status.replaceAll("_", " ")}</span>
+          </div>
+          <p className="mt-4 text-sm leading-6 text-slate-600">{ticket.body}</p>
+          <p className="mt-4 text-xs text-slate-400">Priority {ticket.priority} · {date(ticket.createdAt)}</p>
+        </article>
+      )) : <p className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-sm text-slate-500">No client change requests are connected to your assigned projects.</p>}
+    </div>
+  );
 }
 
 function UpdatesSection({ kind, data }: { kind: Kind; data: MemberWorkspaceData }) {
@@ -75,5 +149,5 @@ export async function MemberWorkspacePage({ kind, section, authError, authNotice
   const root = kind === "employee" ? "/employee-portal" : "/portal";
   const title = kind === "employee" ? "Employee workspace" : "Client workspace";
   const sectionTitle = navigation(kind).find((item) => item.href.endsWith(section === "home" ? root : `/${section}`))?.label || title;
-  return <section className="min-h-[100dvh] bg-slate-100 text-slate-950"><header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur"><div className="mx-auto flex min-h-16 max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:px-6"><Link href={root}><BrandLogo /></Link><form action={signOutFromPortal}><input type="hidden" name="returnTo" value={root} /><button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"><LogOut className="h-4 w-4" />Sign out</button></form></div><nav className="mx-auto max-w-[1500px] overflow-x-auto px-3 pb-3 sm:px-5"><div className="flex w-max gap-2">{navigation(kind).map((item) => { const Icon = item.icon; const active = section === "home" ? item.href === root : item.href.endsWith(`/${section}`); return <Link key={item.href} href={item.href} className={`inline-flex min-h-9 items-center gap-2 rounded-xl px-3 text-xs font-bold ${active ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}><Icon className="h-3.5 w-3.5" />{item.label}</Link>; })}</div></nav></header><main className="mx-auto max-w-[1500px] p-4 sm:p-6 xl:p-8">{authError ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{authError}</div> : null}{authNotice ? <div className="mb-4 flex gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700"><CheckCircle2 className="h-4 w-4" />{authNotice}</div> : null}<header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">{title}</p><h1 className="mt-3 text-3xl font-semibold">{sectionTitle}</h1><p className="mt-2 text-sm text-slate-500">Welcome, {data.dashboard.profile?.fullName}. This page shows only the information needed for this part of the work.</p></header><div className="mt-6">{section === "home" ? <HomeSection kind={kind} data={data} /> : null}{section === "projects" ? <ProjectsSection kind={kind} data={data} /> : null}{section === "tasks" ? <TasksSection data={data} /> : null}{section === "reviews" ? <ReviewsSection data={data} /> : null}{section === "updates" ? <UpdatesSection kind={kind} data={data} /> : null}{section === "change-requests" ? <ChangeRequestsSection data={data} /> : null}</div></main></section>;
+  return <section className="min-h-[100dvh] bg-slate-100 text-slate-950"><header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur"><div className="mx-auto flex min-h-16 max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:px-6"><Link href={root}><BrandLogo /></Link><form action={signOutFromPortal}><input type="hidden" name="returnTo" value={root} /><button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"><LogOut className="h-4 w-4" />Sign out</button></form></div><nav className="mx-auto max-w-[1500px] overflow-x-auto px-3 pb-3 sm:px-5"><div className="flex w-max gap-2">{navigation(kind).map((item) => { const Icon = item.icon; const active = section === "home" ? item.href === root : item.href.endsWith(`/${section}`); return <Link key={item.href} href={item.href} className={`inline-flex min-h-9 items-center gap-2 rounded-xl px-3 text-xs font-bold ${active ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}><Icon className="h-3.5 w-3.5" />{item.label}</Link>; })}</div></nav></header><main className="mx-auto max-w-[1500px] p-4 sm:p-6 xl:p-8">{authError ? <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{authError}</div> : null}{authNotice ? <div className="mb-4 flex gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700"><CheckCircle2 className="h-4 w-4" />{authNotice}</div> : null}<header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-600">{title}</p><h1 className="mt-3 text-3xl font-semibold">{sectionTitle}</h1><p className="mt-2 text-sm text-slate-500">Welcome, {data.dashboard.profile?.fullName}. This page shows only the information needed for this part of the work.</p></header><div className="mt-6">{section === "home" ? <HomeSection kind={kind} data={data} /> : null}{section === "projects" ? <ProjectsSection kind={kind} data={data} /> : null}{section === "tasks" ? <TasksSection data={data} /> : null}{section === "reviews" ? <ReviewsSection data={data} /> : null}{section === "requests" ? <RequestsSection data={data} /> : null}{section === "updates" ? <UpdatesSection kind={kind} data={data} /> : null}{section === "change-requests" ? <ChangeRequestsSection data={data} /> : null}</div></main></section>;
 }
