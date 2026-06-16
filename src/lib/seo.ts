@@ -22,7 +22,9 @@ export function createMetadata({
   const url = absoluteUrl(path);
 
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://houseofdev.com"),
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofdev.online",
+    ),
     title: pageTitle,
     description,
     keywords,
@@ -62,16 +64,15 @@ export const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "HouseOfDev",
-  url: "https://houseofdev.com",
-  logo: "https://houseofdev.com/icon.png",
+  url: "https://www.houseofdev.online",
+  logo: "https://www.houseofdev.online/icon.png",
   slogan: "Transforming Businesses Into Powerful Digital Brands",
-  sameAs: ["https://www.linkedin.com/company/houseofdev"],
   contactPoint: [
     {
       "@type": "ContactPoint",
       contactType: "sales",
       areaServed: "IN",
-      availableLanguage: ["English", "Tamil", "Hindi"],
+      availableLanguage: ["English", "Tamil"],
     },
   ],
 };
@@ -84,6 +85,5 @@ export const localBusinessJsonLd = {
     "Website development, web applications, AI automation, cloud services, SEO, and digital transformation for local businesses and enterprises.",
   areaServed: ["Hosur", "Bangalore", "India"],
   priceRange: "INR 4,999+",
-  url: "https://houseofdev.com",
+  url: "https://www.houseofdev.online",
 };
-
