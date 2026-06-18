@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CalendarCheck2,
   CalendarClock,
   CircleDollarSign,
   FileText,
@@ -21,6 +22,7 @@ const adminNavItems = [
   { label: "Clients", icon: Users, href: "/admin-dashboard/clients" },
   { label: "Employees", icon: UserRoundCog, href: "/admin-dashboard/employees" },
   { label: "Projects", icon: FolderKanban, href: "/admin-dashboard/projects" },
+  { label: "Consultations", icon: CalendarCheck2, href: "/admin-dashboard/consultations" },
   { label: "Finance", icon: CircleDollarSign, href: "/admin-dashboard/finance" },
   { label: "Upcoming", icon: CalendarClock, href: "/admin-dashboard/upcoming" },
   { label: "Reports", icon: FileText, href: "/admin-dashboard/reports" },
