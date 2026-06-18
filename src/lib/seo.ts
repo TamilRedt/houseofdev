@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { absoluteUrl } from "@/lib/utils";
 
-const defaultTitle = "HouseOfDev - Premium Digital Agency in India";
+const brandName = "House Of Dev";
+const brandMarkPath = "/brand/houseofdev-mark.svg";
+const defaultTitle = "House Of Dev | Websites & AI Automation for Local Businesses";
 const defaultDescription =
-  "HouseOfDev builds premium websites, web applications, AI automation, cloud systems, SEO, branding, and digital transformation solutions for growing businesses.";
+  "House Of Dev helps local businesses move online and grow through professional websites, dashboards, booking systems, business automation, and AI-powered workflows.";
 
 export function createMetadata({
   title,
@@ -18,24 +20,43 @@ export function createMetadata({
   image?: string;
   keywords?: string[];
 } = {}): Metadata {
-  const pageTitle = title ? `${title} | HouseOfDev` : defaultTitle;
+  const pageTitle = title ? `${title} | ${brandName}` : defaultTitle;
   const url = absoluteUrl(path);
 
   return {
     metadataBase: new URL(
       process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofdev.online",
     ),
+    applicationName: brandName,
     title: pageTitle,
     description,
-    keywords,
+    keywords: [
+      "House Of Dev",
+      "HouseOfDev",
+      "website development for local businesses",
+      "AI automation services",
+      "business websites in Hosur",
+      "web development in Bengaluru",
+      ...keywords,
+    ],
+    authors: [{ name: brandName, url: absoluteUrl("/") }],
+    creator: brandName,
+    publisher: brandName,
+    category: "Technology",
     alternates: {
       canonical: url,
     },
+    icons: {
+      icon: [{ url: brandMarkPath, type: "image/svg+xml", sizes: "any" }],
+      shortcut: [brandMarkPath],
+      apple: [{ url: brandMarkPath, type: "image/svg+xml", sizes: "512x512" }],
+    },
+    manifest: "/manifest.webmanifest",
     openGraph: {
       title: pageTitle,
       description,
       url,
-      siteName: "HouseOfDev",
+      siteName: brandName,
       locale: "en_IN",
       type: "website",
       images: [
@@ -43,7 +64,7 @@ export function createMetadata({
           url: absoluteUrl(image),
           width: 1200,
           height: 630,
-          alt: "HouseOfDev premium digital agency",
+          alt: "House Of Dev — Local Business Transition, Growth, Value",
         },
       ],
     },
@@ -56,20 +77,44 @@ export function createMetadata({
     robots: {
       index: true,
       follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
     },
   };
 }
 
+const brandLogo = {
+  "@type": "ImageObject",
+  url: "https://www.houseofdev.online/brand/houseofdev-mark.svg",
+  contentUrl: "https://www.houseofdev.online/brand/houseofdev-mark.svg",
+  width: 512,
+  height: 512,
+  caption: "House Of Dev logo",
+};
+
 export const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "HouseOfDev",
-  url: "https://www.houseofdev.online",
-  logo: "https://www.houseofdev.online/icon.png",
-  slogan: "Transforming Businesses Into Powerful Digital Brands",
+  "@id": "https://www.houseofdev.online/#organization",
+  name: brandName,
+  alternateName: "HouseOfDev",
+  url: "https://www.houseofdev.online/",
+  logo: brandLogo,
+  image: brandLogo,
+  slogan: "Local Business Transition | Growth | Value",
+  description: defaultDescription,
+  email: "mailto:arasanredt@gmail.com",
+  telephone: "+91-88384-01597",
+  areaServed: ["Hosur", "Bengaluru", "Tamil Nadu", "Karnataka", "India"],
   contactPoint: [
     {
       "@type": "ContactPoint",
+      telephone: "+91-88384-01597",
       contactType: "sales",
       areaServed: "IN",
       availableLanguage: ["English", "Tamil"],
@@ -77,13 +122,33 @@ export const organizationJsonLd = {
   ],
 };
 
+export const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "https://www.houseofdev.online/#website",
+  name: brandName,
+  alternateName: "HouseOfDev",
+  url: "https://www.houseofdev.online/",
+  publisher: {
+    "@id": "https://www.houseofdev.online/#organization",
+  },
+};
+
 export const localBusinessJsonLd = {
   "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  name: "HouseOfDev",
-  description:
-    "Website development, web applications, AI automation, cloud services, SEO, and digital transformation for local businesses and enterprises.",
-  areaServed: ["Hosur", "Bangalore", "India"],
+  "@type": "ProfessionalService",
+  "@id": "https://www.houseofdev.online/#professional-service",
+  name: brandName,
+  alternateName: "HouseOfDev",
+  description: defaultDescription,
+  areaServed: ["Hosur", "Bengaluru", "Tamil Nadu", "Karnataka", "India"],
   priceRange: "INR 4,999+",
-  url: "https://www.houseofdev.online",
+  url: "https://www.houseofdev.online/",
+  logo: brandLogo,
+  image: brandLogo,
+  telephone: "+91-88384-01597",
+  email: "mailto:arasanredt@gmail.com",
+  parentOrganization: {
+    "@id": "https://www.houseofdev.online/#organization",
+  },
 };
