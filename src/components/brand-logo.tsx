@@ -7,7 +7,7 @@ type BrandLogoProps = {
 export function HouseOfDevMark({ className = "h-10 w-10" }: { className?: string }) {
   return (
     <img
-      src="/brand/houseofdev-mark.png"
+      src="/brand/houseofdev-mark.svg"
       alt=""
       width={512}
       height={512}
@@ -34,7 +34,7 @@ export function BrandLogo({ compact = false, inverted = false, className = "" }:
       className={`inline-flex min-w-0 items-center ${inverted ? "rounded-xl bg-[#F4F0E6] px-2 py-1.5 shadow-sm" : ""} ${className}`}
     >
       <img
-        src="/brand/houseofdev-logo-horizontal.png"
+        src="/brand/houseofdev-logo-horizontal.svg"
         alt="House Of Dev — Local Business Transition, Growth, Value"
         width={920}
         height={321}
