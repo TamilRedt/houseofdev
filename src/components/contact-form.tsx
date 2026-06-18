@@ -4,11 +4,14 @@ import { useActionState, useEffect, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Send } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { submitContact, type ActionState } from "@/app/actions";
+import {
+  submitConsultation,
+  type ConsultationActionState,
+} from "@/app/consultation-actions";
 import { services } from "@/lib/data";
 import { contactSchema, type ContactInput } from "@/lib/validations";
 
-const initialState: ActionState = {
+const initialState: ConsultationActionState = {
   ok: false,
   message: "Ready",
 };
@@ -31,7 +34,7 @@ function FieldError({ message }: { message?: string }) {
 }
 
 export function ContactForm() {
-  const [state, formAction] = useActionState(submitContact, initialState);
+  const [state, formAction] = useActionState(submitConsultation, initialState);
   const [isPending, startTransition] = useTransition();
   const {
     register,
@@ -56,9 +59,7 @@ export function ContactForm() {
   });
 
   useEffect(() => {
-    if (state.ok) {
-      reset();
-    }
+    if (state.ok) reset();
   }, [reset, state.ok]);
 
   function onValid(values: ContactInput) {
@@ -102,9 +103,7 @@ export function ContactForm() {
           <span className="text-sm font-semibold text-slate-700">Industry</span>
           <select className={inputClass} {...register("industry")}>
             <option value="">Select industry</option>
-            {industries.map((industry) => (
-              <option key={industry}>{industry}</option>
-            ))}
+            {industries.map((industry) => <option key={industry}>{industry}</option>)}
           </select>
           <FieldError message={errors.industry?.message || state.errors?.industry?.[0]} />
         </label>
@@ -112,9 +111,7 @@ export function ContactForm() {
           <span className="text-sm font-semibold text-slate-700">Budget</span>
           <select className={inputClass} {...register("budget")}>
             <option value="">Select budget</option>
-            {budgets.map((budget) => (
-              <option key={budget}>{budget}</option>
-            ))}
+            {budgets.map((budget) => <option key={budget}>{budget}</option>)}
           </select>
           <FieldError message={errors.budget?.message || state.errors?.budget?.[0]} />
         </label>
@@ -124,9 +121,7 @@ export function ContactForm() {
         <span className="text-sm font-semibold text-slate-700">Service Required</span>
         <select className={inputClass} {...register("serviceRequired")}>
           <option value="">Select service</option>
-          {services.map((service) => (
-            <option key={service.slug}>{service.title}</option>
-          ))}
+          {services.map((service) => <option key={service.slug}>{service.title}</option>)}
         </select>
         <FieldError message={errors.serviceRequired?.message || state.errors?.serviceRequired?.[0]} />
       </label>
@@ -139,10 +134,11 @@ export function ContactForm() {
         </label>
         <label className="block">
           <span className="text-sm font-semibold text-slate-700">Preferred Time</span>
-          <input className={inputClass} {...register("preferredTime")} placeholder="Example: 11:00 AM" />
+          <input className={inputClass} {...register("preferredTime")} type="time" />
           <FieldError message={errors.preferredTime?.message || state.errors?.preferredTime?.[0]} />
         </label>
       </div>
+      <p className="mt-2 text-xs leading-5 text-slate-500">The system checks the HouseOfDev calendar. Free slots are booked automatically; conflicts are sent for manual rescheduling.</p>
 
       <label className="mt-5 block">
         <span className="text-sm font-semibold text-slate-700">Message</span>
@@ -165,10 +161,9 @@ export function ContactForm() {
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-950/15 transition hover:-translate-y-0.5 hover:bg-blue-700 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Send className="h-4 w-4" />
-          {isPending ? "Sending..." : "Send Request"}
+          {isPending ? "Checking calendar..." : "Book consultation"}
         </button>
       </div>
     </form>
   );
 }
-
