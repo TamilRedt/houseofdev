@@ -10,10 +10,10 @@ export async function GET() {
           width: "100%",
           height: "100%",
           display: "flex",
-          background: "#0f172a",
-          color: "white",
+          background: "#F4F0E6",
+          color: "#172A46",
           fontFamily: "Arial, sans-serif",
-          padding: 64,
+          padding: 56,
         }}
       >
         <div
@@ -22,39 +22,32 @@ export async function GET() {
             flexDirection: "column",
             justifyContent: "space-between",
             width: "100%",
-            border: "1px solid rgba(255,255,255,0.18)",
-            borderRadius: 24,
-            padding: 56,
-            background:
-              "linear-gradient(135deg, rgba(37,99,235,0.38), rgba(16,185,129,0.24))",
+            border: "3px solid #172A46",
+            borderRadius: 30,
+            padding: 48,
+            background: "#F4F0E6",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <div
-              style={{
-                display: "flex",
-                width: 64,
-                height: 64,
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 12,
-                background: "white",
-                color: "#0f172a",
-                fontSize: 24,
-                fontWeight: 800,
-              }}
-            >
-              HD
+          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+            <img
+              src="https://www.houseofdev.online/brand/houseofdev-mark.svg"
+              width="112"
+              height="112"
+              alt="House Of Dev"
+            />
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: 1 }}>HOUSE OF DEV</div>
+              <div style={{ marginTop: 8, fontSize: 18, fontWeight: 600, letterSpacing: 2 }}>
+                LOCAL BUSINESS TRANSITION | GROWTH | VALUE
+              </div>
             </div>
-            <div style={{ fontSize: 34, fontWeight: 700 }}>HouseOfDev</div>
           </div>
           <div>
-            <div style={{ fontSize: 72, fontWeight: 800, lineHeight: 1.04, maxWidth: 940 }}>
-              Transforming Businesses Into Powerful Digital Brands
+            <div style={{ fontSize: 66, fontWeight: 800, lineHeight: 1.06, maxWidth: 980 }}>
+              Websites and automation that help local businesses grow online.
             </div>
-            <div style={{ marginTop: 24, fontSize: 28, color: "#dbeafe", maxWidth: 900 }}>
-              Premium websites, web applications, automation, AI, cloud, SEO, and digital
-              transformation.
+            <div style={{ marginTop: 22, fontSize: 27, lineHeight: 1.4, maxWidth: 940 }}>
+              Professional websites, dashboards, booking systems, business automation, and AI-powered workflows.
             </div>
           </div>
         </div>
