@@ -150,3 +150,9 @@ textarea:focus-visible {
   height: 1px;
   overflow: hidden;
 }
+
+/* Normalize legacy dark surfaces to the official House Of Dev navy. */
+[class*="#050816"],
+[class*="#0B1020"] {
+  background-color: #172a46 !important;
+}
