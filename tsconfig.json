@@ -23,6 +23,9 @@
       }
     ],
     "paths": {
+      "@/app/portal-actions": [
+        "./src/app/portal-actions-proxy.ts"
+      ],
       "@/*": [
         "./src/*"
       ]
