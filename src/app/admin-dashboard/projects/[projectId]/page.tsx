@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, CheckCircle2, Users } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, ShieldCheck, Users } from "lucide-react";
 import { adminAssignEmployee, adminUpdateProject } from "@/app/workspace-actions";
 import { AdminMobileHeader, AdminSidebar } from "@/components/admin-dashboard-navigation";
 import { PortalAccessGate } from "@/components/portal-access-gate";
 import { ProjectRequestList } from "@/components/project-request-list";
+import { ProjectReviewPanel } from "@/components/project-review-panel";
 import { getAdminWorkspaceData } from "@/lib/admin-workspace";
+import { reviewProjectHealth } from "@/lib/project-health";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,18 @@ export default async function AdminProjectWorkspacePage({ params, searchParams }
   if (data.dashboard.mode !== "live") return <PortalAccessGate dashboard={data.dashboard} />;
   const project = data.projects.find((item) => item.id === projectId);
 
+  const projectUpdates = project ? data.recentUpdates.filter((update) => update.projectTitle === project.title) : [];
+  const health = project ? reviewProjectHealth({
+    status: project.status,
+    progress: project.progress,
+    dueDate: project.dueDate,
+    openTasks: project.openTasks,
+    employeeCount: project.employees.length,
+    updateCount: project.updateCount,
+    lastUpdateAt: projectUpdates[0]?.createdAt || null,
+  }) : null;
+  const HealthIcon = health?.key === "healthy" || health?.key === "completed" ? CheckCircle2 : health?.key === "attention" ? AlertTriangle : ShieldCheck;
+
   return (
     <section className="min-h-[100dvh] bg-slate-100 text-slate-950">
       <div className="mx-auto w-full max-w-[1920px] lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
@@ -45,6 +59,14 @@ export default async function AdminProjectWorkspacePage({ params, searchParams }
                 <div className="mt-7"><div className="mb-2 flex justify-between text-sm font-semibold"><span>Client-visible progress</span><span>{project.progress}%</span></div><div className="h-3 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400" style={{ width: `${project.progress}%` }} /></div></div>
                 <div className="mt-6 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-white/10 px-3 py-2 capitalize">{project.status.replaceAll("_", " ")}</span><span className="rounded-full bg-white/10 px-3 py-2"><CalendarDays className="mr-1 inline h-3.5 w-3.5" />Due {date(project.dueDate)}</span><span className="rounded-full bg-white/10 px-3 py-2"><Users className="mr-1 inline h-3.5 w-3.5" />{project.employees.length} employees</span></div>
               </header>
+
+              {health ? <section className={`mt-6 rounded-3xl border p-6 shadow-sm ${health.key === "at_risk" ? "border-red-200 bg-red-50" : health.key === "attention" ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"}`}>
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                  <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Automatic project reviewer</p><h2 className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold"><HealthIcon className="h-6 w-6" />{health.label}</h2><p className="mt-2 text-sm text-slate-600">Live score based on deadlines, progress, staffing, open tasks, and update activity.</p></div>
+                  <div className="rounded-2xl bg-white/80 px-5 py-4 text-center"><p className="text-xs font-semibold text-slate-500">Health score</p><p className="mt-1 text-3xl font-black">{health.score}/100</p></div>
+                </div>
+                <div className="mt-5 grid gap-2">{health.reasons.map((reason) => <p key={reason} className="rounded-xl bg-white/70 px-4 py-3 text-sm text-slate-700">{reason}</p>)}</div>
+              </section> : null}
 
               <div className="mt-6 grid gap-6 xl:grid-cols-2">
                 <form action={adminUpdateProject} className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -66,8 +88,9 @@ export default async function AdminProjectWorkspacePage({ params, searchParams }
 
               <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-xl font-semibold">Assigned delivery team</h2><div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{project.employees.length ? project.employees.map((employee) => <div key={employee.id} className="rounded-2xl bg-slate-50 p-4"><p className="font-semibold">{employee.name}</p><p className="mt-1 text-sm text-slate-500">{employee.role}</p></div>) : <p className="text-sm text-slate-500">No employee has been assigned yet.</p>}</div></section>
 
-              <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-xl font-semibold">Recent employee updates</h2><p className="mt-1 text-sm text-slate-500">Daily reviews shared from the employee portal.</p><div className="mt-5 grid gap-3">{data.recentUpdates.filter((update) => update.projectTitle === project.title).length ? data.recentUpdates.filter((update) => update.projectTitle === project.title).map((update) => <article key={update.id} className="rounded-2xl border border-slate-200 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{update.title}</p><span className="text-xs text-slate-500">{update.authorName} · {date(update.createdAt)}</span></div><p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">{update.body}</p></article>) : <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">No daily update has been submitted yet.</p>}</div></section>
+              <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"><h2 className="text-xl font-semibold">Recent employee updates</h2><p className="mt-1 text-sm text-slate-500">Daily reviews shared from the employee portal.</p><div className="mt-5 grid gap-3">{projectUpdates.length ? projectUpdates.map((update) => <article key={update.id} className="rounded-2xl border border-slate-200 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="font-semibold">{update.title}</p><span className="text-xs text-slate-500">{update.authorName} · {date(update.createdAt)}</span></div><p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">{update.body}</p></article>) : <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">No daily update has been submitted yet.</p>}</div></section>
 
+              <ProjectReviewPanel projectId={project.id} />
               <ProjectRequestList projectId={project.id} />
             </>}
           </main>
