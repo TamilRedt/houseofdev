@@ -1,37 +1,35 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { navItems, services } from "@/lib/data";
+import { BrandLogo } from "@/components/brand-logo";
 import { Container } from "@/components/container";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-slate-200 bg-slate-950 text-white">
+    <footer className="border-t border-[#F4F0E6]/10 bg-[#172A46] text-[#F4F0E6]">
       <Container className="pb-28 pt-14 md:pb-14">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr]">
           <div>
-            <Link href="/" className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-md bg-white text-sm font-bold text-slate-950">
-                HD
-              </span>
-              <span className="text-lg font-semibold">HouseOfDev</span>
+            <Link href="/" className="inline-flex" aria-label="House Of Dev home">
+              <BrandLogo inverted />
             </Link>
-            <p className="mt-5 max-w-md text-sm leading-7 text-slate-300">
-              Transforming businesses into powerful digital brands through premium websites, web
-              applications, automation, AI, cloud, SEO, and enterprise-grade digital systems.
+            <p className="mt-5 max-w-md text-sm leading-7 text-[#F4F0E6]/75">
+              Helping local businesses move online through professional websites, dashboards,
+              booking systems, business automation, and AI-powered workflows.
             </p>
-            <div className="mt-6 space-y-3 text-sm text-slate-300">
+            <div className="mt-6 space-y-3 text-sm text-[#F4F0E6]/75">
               <p className="flex items-center gap-3">
-                <MapPin className="h-4 w-4 text-emerald-400" /> Hosur, Bangalore, and remote across India
+                <MapPin className="h-4 w-4 text-[#F4F0E6]" /> Hosur, Bengaluru, and remote across India
               </p>
               <p className="flex items-center gap-3">
-                <Mail className="h-4 w-4 text-emerald-400" /> 
-                <a href="mailto:arasanredt@gmail.com" className="hover:text-white transition">
+                <Mail className="h-4 w-4 text-[#F4F0E6]" />
+                <a href="mailto:arasanredt@gmail.com" className="transition hover:text-white">
                   arasanredt@gmail.com
                 </a>
               </p>
               <p className="flex items-center gap-3">
-                <Phone className="h-4 w-4 text-emerald-400" /> 
-                <a href="tel:+918838401597" className="hover:text-white transition">
+                <Phone className="h-4 w-4 text-[#F4F0E6]" />
+                <a href="tel:+918838401597" className="transition hover:text-white">
                   +91 88384 01597 (Consultation by appointment)
                 </a>
               </p>
@@ -39,10 +37,10 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">Company</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[#F4F0E6]/55">Company</h3>
             <div className="mt-4 grid gap-3">
               {navItems.slice(4).map((item) => (
-                <Link key={item.href} href={item.href} className="text-sm text-slate-300 hover:text-white">
+                <Link key={item.href} href={item.href} className="text-sm text-[#F4F0E6]/75 hover:text-white">
                   {item.label}
                 </Link>
               ))}
@@ -50,25 +48,24 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">Services</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[#F4F0E6]/55">Services</h3>
             <div className="mt-4 grid gap-3">
               {services.slice(0, 7).map((item) => (
                 <Link
                   key={item.slug}
                   href={`/services/${item.slug}`}
-                  className="text-sm text-slate-300 hover:text-white"
+                  className="text-sm text-[#F4F0E6]/75 hover:text-white"
                 >
                   {item.title}
                 </Link>
               ))}
             </div>
           </div>
-
         </div>
 
-        <div className="mt-12 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} HouseOfDev. All rights reserved.</p>
-          <p>Built with Next.js 16, TypeScript, Supabase, AWS, and Vercel.</p>
+        <div className="mt-12 flex flex-col gap-4 border-t border-[#F4F0E6]/10 pt-6 text-xs text-[#F4F0E6]/55 sm:flex-row sm:items-center sm:justify-between">
+          <p>&copy; {new Date().getFullYear()} House Of Dev. All rights reserved.</p>
+          <p>Local Business Transition | Growth | Value</p>
         </div>
       </Container>
     </footer>
