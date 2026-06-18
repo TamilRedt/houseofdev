@@ -15,7 +15,6 @@ export default function manifest(): MetadataRoute.Manifest {
         src: "/brand/houseofdev-mark.svg",
         sizes: "any",
         type: "image/svg+xml",
-        purpose: "any maskable",
       },
     ],
   };
