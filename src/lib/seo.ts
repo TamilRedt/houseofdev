@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { absoluteUrl } from "@/lib/utils";
+import { absoluteUrl, siteUrl } from "@/lib/utils";
 
 const brandName = "House Of Dev";
 const brandMarkPath = "/brand/houseofdev-mark.svg";
@@ -24,9 +24,7 @@ export function createMetadata({
   const url = absoluteUrl(path);
 
   return {
-    metadataBase: new URL(
-      process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofdev.online",
-    ),
+    metadataBase: new URL(siteUrl),
     applicationName: brandName,
     title: pageTitle,
     description,
@@ -90,8 +88,8 @@ export function createMetadata({
 
 const brandLogo = {
   "@type": "ImageObject",
-  url: "https://www.houseofdev.online/brand/houseofdev-mark.svg",
-  contentUrl: "https://www.houseofdev.online/brand/houseofdev-mark.svg",
+  url: absoluteUrl(brandMarkPath),
+  contentUrl: absoluteUrl(brandMarkPath),
   width: 512,
   height: 512,
   caption: "House Of Dev logo",
@@ -100,10 +98,10 @@ const brandLogo = {
 export const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  "@id": "https://www.houseofdev.online/#organization",
+  "@id": `${siteUrl}/#organization`,
   name: brandName,
   alternateName: "HouseOfDev",
-  url: "https://www.houseofdev.online/",
+  url: `${siteUrl}/`,
   logo: brandLogo,
   image: brandLogo,
   slogan: "Local Business Transition | Growth | Value",
@@ -125,30 +123,30 @@ export const organizationJsonLd = {
 export const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "@id": "https://www.houseofdev.online/#website",
+  "@id": `${siteUrl}/#website`,
   name: brandName,
   alternateName: "HouseOfDev",
-  url: "https://www.houseofdev.online/",
+  url: `${siteUrl}/`,
   publisher: {
-    "@id": "https://www.houseofdev.online/#organization",
+    "@id": `${siteUrl}/#organization`,
   },
 };
 
 export const localBusinessJsonLd = {
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
-  "@id": "https://www.houseofdev.online/#professional-service",
+  "@id": `${siteUrl}/#professional-service`,
   name: brandName,
   alternateName: "HouseOfDev",
   description: defaultDescription,
   areaServed: ["Hosur", "Bengaluru", "Tamil Nadu", "Karnataka", "India"],
   priceRange: "INR 4,999+",
-  url: "https://www.houseofdev.online/",
+  url: `${siteUrl}/`,
   logo: brandLogo,
   image: brandLogo,
   telephone: "+91-88384-01597",
   email: "mailto:arasanredt@gmail.com",
   parentOrganization: {
-    "@id": "https://www.houseofdev.online/#organization",
+    "@id": `${siteUrl}/#organization`,
   },
 };
