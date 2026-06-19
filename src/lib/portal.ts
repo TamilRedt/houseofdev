@@ -19,28 +19,6 @@ export type PortalProfile = {
   companyName: string | null;
 };
 
-export type PortalCredentialRequest = {
-  id: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  companyName: string | null;
-  accountType: string;
-  message: string | null;
-  source: string;
-};
-
-export type PortalCredentialUser = {
-  id: string;
-  fullName: string;
-  email: string;
-  phone: string | null;
-  role: UserRole;
-  companyName: string | null;
-  jobTitle: string | null;
-  department: string | null;
-};
-
 export type PortalStat = {
   label: string;
   value: string;
@@ -55,6 +33,27 @@ export type PortalTable = {
   emptyText: string;
 };
 
+export type PortalCredentialRequest = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  companyName: string | null;
+  accountType: string;
+  message: string | null;
+};
+
+export type PortalCredentialUser = {
+  id: string;
+  fullName: string;
+  email: string;
+  role: UserRole;
+  phone: string | null;
+  companyName: string | null;
+  jobTitle: string | null;
+  department: string | null;
+};
+
 export type PortalDashboardData = {
   kind: PortalKind;
   mode: PortalMode;
@@ -67,8 +66,8 @@ export type PortalDashboardData = {
   stats: PortalStat[];
   tables: PortalTable[];
   notices: string[];
-  credentialRequests: PortalCredentialRequest[];
-  credentialUsers: PortalCredentialUser[];
+  credentialRequests?: PortalCredentialRequest[];
+  credentialUsers?: PortalCredentialUser[];
 };
 
 type AuthUser = {
@@ -242,8 +241,6 @@ function accessDashboard(kind: PortalKind, mode: PortalMode, notices: string[], 
     stats: [],
     tables: [],
     notices,
-    credentialRequests: [],
-    credentialUsers: [],
   };
 }
 
@@ -262,8 +259,6 @@ function demoDashboard(kind: PortalKind, mode: PortalMode, notices: string[], pr
       eyebrow: copy.eyebrow,
       profile: demoProfile,
       notices,
-      credentialRequests: [],
-      credentialUsers: [],
       stats: [
         { label: "Assigned Tasks", value: "8", helper: "3 due this week" },
         { label: "Logged Days", value: "19", helper: "This month" },
@@ -307,8 +302,6 @@ function demoDashboard(kind: PortalKind, mode: PortalMode, notices: string[], pr
       eyebrow: copy.eyebrow,
       profile: demoProfile,
       notices,
-      credentialRequests: [],
-      credentialUsers: [],
       stats: [
         { label: "New Leads", value: "12", helper: "Contact requests" },
         { label: "Candidates", value: "7", helper: "Career applications" },
@@ -352,8 +345,6 @@ function demoDashboard(kind: PortalKind, mode: PortalMode, notices: string[], pr
     eyebrow: copy.eyebrow,
     profile: demoProfile,
     notices,
-    credentialRequests: [],
-    credentialUsers: [],
     stats: [
       { label: "Active Projects", value: "3", helper: "2 in delivery" },
       { label: "Open Tickets", value: "2", helper: "Average first reply under 1 day" },
@@ -386,7 +377,7 @@ function demoDashboard(kind: PortalKind, mode: PortalMode, notices: string[], pr
   };
 }
 
-async function loadProfile(db: SupabaseClient, user: AuthUser): Promise<PortalProfile | null> {
+async function loadProfile(db: SupabaseClient, user: AuthUser): Promise<PortalProfile> {
   const { data, error } = await db
     .from("profiles")
     .select("id, full_name, email, role, company_name")
@@ -403,11 +394,13 @@ async function loadProfile(db: SupabaseClient, user: AuthUser): Promise<PortalPr
     };
   }
 
-  if (error) {
-    console.error("Portal profile lookup failed", error.message);
-  }
-
-  return null;
+  return {
+    id: user.id,
+    fullName: user.user_metadata?.full_name || user.user_metadata?.name || user.email || "Portal User",
+    email: user.email || "",
+    role: "individual_client",
+    companyName: user.user_metadata?.company_name || null,
+  };
 }
 
 function isMissingSchemaFeature(error?: { message?: string } | null) {
@@ -730,7 +723,6 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
     careerCount,
     profileCount,
     activityCount,
-    credentialCount,
     clientAccountCount,
     assignmentCount,
     xpCount,
@@ -746,10 +738,6 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
     careerResult,
     projectResult,
     invoiceResult,
-    credentialResult,
-    activityResult,
-    credentialRequestResult,
-    credentialUserResult,
   ] = await Promise.all([
     countRows(db, "consultation_requests", notices, "Consultation count"),
     countRows(db, "portal_access_requests", notices, "Portal access count"),
@@ -758,7 +746,6 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
     countRows(db, "career_applications", notices, "Career count"),
     countRows(db, "profiles", notices, "Profile count"),
     countRows(db, "portal_activity_logs", notices, "Activity log count"),
-    countRows(db, "portal_credential_events", notices, "Credential event count"),
     countRows(db, "client_accounts", notices, "Client account count"),
     countRows(db, "project_members", notices, "Project assignment count"),
     countRows(db, "employee_xp_events", notices, "EXP count"),
@@ -806,27 +793,6 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
       .select("invoice_number, amount, currency, status, due_date, created_at")
       .order("created_at", { ascending: false })
       .limit(6),
-    db
-      .from("portal_credential_events")
-      .select("email, role, action, created_at")
-      .order("created_at", { ascending: false })
-      .limit(6),
-    db
-      .from("portal_activity_logs")
-      .select("email, event_type, status, created_at")
-      .order("created_at", { ascending: false })
-      .limit(8),
-    db
-      .from("portal_access_requests")
-      .select("id, full_name, email, phone, company_name, account_type, message, source")
-      .in("status", ["new", "reviewing"])
-      .order("created_at", { ascending: false })
-      .limit(25),
-    db
-      .from("profiles")
-      .select("id, full_name, email, phone, role, company_name, job_title, department")
-      .order("created_at", { ascending: false })
-      .limit(50),
   ]);
 
   addError(notices, "Consultation requests", consultationResult.error);
@@ -837,45 +803,12 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
   addError(notices, "Recent careers", careerResult.error);
   addError(notices, "Recent projects", projectResult.error);
   addError(notices, "Recent invoices", invoiceResult.error);
-  addError(notices, "Credential events", credentialResult.error);
-  addError(notices, "Portal activity", activityResult.error);
-  addError(notices, "Credential request options", credentialRequestResult.error);
-  addError(notices, "Credential user options", credentialUserResult.error);
 
   return {
     ...demoDashboard("admin", "live", notices, profile),
-    credentialRequests: asRows(credentialRequestResult.data || [], (request) => [
-      String(request.id),
-      String(request.full_name || ""),
-      String(request.email || ""),
-      String(request.phone || ""),
-      String(request.company_name || ""),
-      String(request.account_type || ""),
-      String(request.message || ""),
-      String(request.source || "portal-access"),
-    ]).map(([id, fullName, email, phone, companyName, accountType, message, source]) => ({
-      id,
-      fullName,
-      email,
-      phone,
-      companyName: companyName || null,
-      accountType,
-      message: message || null,
-      source,
-    })),
-    credentialUsers: (credentialUserResult.data || []).map((userProfile) => ({
-      id: String(userProfile.id),
-      fullName: String(userProfile.full_name || userProfile.email || "Portal User"),
-      email: String(userProfile.email || ""),
-      phone: userProfile.phone || null,
-      role: userProfile.role as UserRole,
-      companyName: userProfile.company_name || null,
-      jobTitle: userProfile.job_title || null,
-      department: userProfile.department || null,
-    })),
     stats: [
       { label: "Consultations", value: String(consultationCount), helper: `${accessCount} access requests, ${contactCount} leads, ${careerCount} careers` },
-      { label: "Users", value: String(profileCount), helper: `${clientAccountCount} client accounts, ${credentialCount} credential events` },
+      { label: "Users", value: String(profileCount), helper: `${clientAccountCount} client accounts, ${changeCount} change requests` },
       { label: "Delivery", value: String(projectCount), helper: `${assignmentCount} employee assignments, ${xpCount} EXP records` },
       { label: "Finance", value: `${invoiceCount}/${paymentCount}`, helper: `${ticketCount} support tickets, ${activityCount} activity logs` },
     ],
@@ -908,7 +841,7 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
       },
       {
         title: "Users, Changes, Careers, Projects, and Finance",
-        description: `Recent users, account changes, hiring, delivery, billing records, and ${changeCount} account change requests.`,
+        description: "Recent users, account changes, hiring, delivery, and billing records.",
         columns: ["Item", "Type", "Status", "Signal"],
         rows: [
           ...asRows(changeResult.data || [], (request) => [
@@ -943,26 +876,6 @@ async function loadAdminDashboard(db: SupabaseClient, profile: PortalProfile, no
           ]),
         ],
         emptyText: "No operational records yet.",
-      },
-      {
-        title: "Credential and Portal Activity",
-        description: "Recent account creation, role repair, login, logout, and request activity.",
-        columns: ["Email", "Event", "Status", "When"],
-        rows: [
-          ...asRows(credentialResult.data || [], (event) => [
-            String(event.email || "-"),
-            `${humanize(event.action)} ${humanize(event.role)}`.trim(),
-            "Credential",
-            formatDate(event.created_at),
-          ]),
-          ...asRows(activityResult.data || [], (event) => [
-            String(event.email || "-"),
-            humanize(event.event_type),
-            humanize(event.status),
-            formatDate(event.created_at),
-          ]),
-        ],
-        emptyText: "No credential or activity events yet.",
       },
     ],
   };
@@ -1002,11 +915,6 @@ export async function getPortalDashboard(kind: PortalKind): Promise<PortalDashbo
 
   const db = getSupabaseAdmin() || serverClient;
   const profile = await loadProfile(db, user);
-
-  if (!profile) {
-    notices.push("Your login exists, but the portal profile role is missing. Ask a super admin to create or repair your portal credential.");
-    return accessDashboard(kind, "unauthorized", notices, null);
-  }
 
   if (!canAccessPortal(kind, profile.role)) {
     notices.push(

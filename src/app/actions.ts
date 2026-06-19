@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { sendLeadNotifications, type NotificationResult } from "@/lib/notifications";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getSupabaseAdmin } from "@/lib/supabase";
-import { careerSchema, contactSchema, localLeadSchema } from "@/lib/validations";
+import { careerSchema, contactSchema } from "@/lib/validations";
 
 export type ActionState = {
   ok: boolean;
@@ -105,6 +105,53 @@ async function recordNotificationEvents({
       response: result.response || result.reason || null,
     })),
   );
+}
+
+export async function submitLocalLead(_: ActionState, formData: FormData): Promise<ActionState> {
+  const limited = await assertRateLimit("local-lead");
+  if (!limited) {
+    return { ok: false, message: "Too many requests. Please wait a minute and try again." };
+  }
+
+  const name = String(formData.get("name") || "").trim();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const phone = String(formData.get("phone") || "").trim();
+  const businessType = String(formData.get("businessType") || "").trim();
+  const selectedPackage = String(formData.get("selectedPackage") || "").trim();
+  const budget = String(formData.get("budget") || "").trim();
+  const message = String(formData.get("message") || "").trim();
+  const website = String(formData.get("website") || "").trim();
+
+  if (website) {
+    return { ok: true, message: "Thanks! We will be in touch shortly." };
+  }
+
+  if (!name || !email.includes("@") || !phone) {
+    return { ok: false, message: "Please enter your name, email, and phone number." };
+  }
+
+  const supabase = getSupabaseAdmin();
+
+  if (supabase) {
+    await supabase.from("contact_requests").insert({
+      full_name: name,
+      email,
+      phone,
+      industry: businessType || null,
+      service_required: selectedPackage || null,
+      budget: budget || null,
+      message: message || null,
+      source: "local-business-home",
+    });
+  }
+
+  await sendLeadNotifications({
+    subject: `New local lead: ${name} — ${businessType}`,
+    html: `<p><b>Name:</b> ${escapeHtml(name)}</p><p><b>Email:</b> ${escapeHtml(email)}</p><p><b>Phone:</b> ${escapeHtml(phone)}</p><p><b>Business:</b> ${escapeHtml(businessType)}</p><p><b>Package:</b> ${escapeHtml(selectedPackage)}</p><p><b>Budget:</b> ${escapeHtml(budget)}</p><p><b>Message:</b> ${escapeHtml(message)}</p>`,
+    text: `Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nBusiness: ${businessType}\nPackage: ${selectedPackage}\nBudget: ${budget}\nMessage: ${message}`,
+  });
+
+  return { ok: true, message: "Thanks! We'll reach out within 24 hours." };
 }
 
 export async function submitContact(_: ActionState, formData: FormData): Promise<ActionState> {
@@ -250,149 +297,6 @@ export async function submitContact(_: ActionState, formData: FormData): Promise
     message: supabase || notified
       ? "Thanks. Your request has been received, and our team will contact you shortly."
       : "Thanks. Your request was prepared, but storage is not configured yet. Please message us directly if this is urgent.",
-  };
-}
-
-export async function submitLocalLead(_: ActionState, formData: FormData): Promise<ActionState> {
-  const limited = await assertRateLimit("local-lead");
-  if (!limited) {
-    return {
-      ok: false,
-      message: "Too many requests. Please wait a minute and try again.",
-    };
-  }
-
-  const raw = {
-    name: String(formData.get("name") || ""),
-    businessType: String(formData.get("businessType") || ""),
-    phone: String(formData.get("phone") || ""),
-    email: String(formData.get("email") || ""),
-    message: String(formData.get("message") || ""),
-    selectedPackage: String(formData.get("selectedPackage") || ""),
-    budget: String(formData.get("budget") || ""),
-    website: String(formData.get("website") || ""),
-  };
-
-  const parsed = localLeadSchema.safeParse(raw);
-  if (!parsed.success) {
-    return {
-      ok: false,
-      message: "Please check the highlighted fields.",
-      errors: parsed.error.flatten().fieldErrors,
-    };
-  }
-
-  if (parsed.data.website) {
-    return {
-      ok: true,
-      message: "Thanks. We will review your request shortly.",
-    };
-  }
-
-  const supabase = getSupabaseAdmin();
-  let leadId: string | null = null;
-  let contactRequestId: string | null = null;
-
-  if (supabase) {
-    const leadResult = await supabase
-      .from("leads")
-      .insert({
-        name: parsed.data.name,
-        business_type: parsed.data.businessType,
-        phone: parsed.data.phone,
-        email: parsed.data.email || null,
-        message: parsed.data.message,
-        selected_package: parsed.data.selectedPackage || null,
-        budget: parsed.data.budget || null,
-        source: "homepage-local-business",
-        status: "new",
-      })
-      .select("id")
-      .maybeSingle();
-
-    if (!leadResult.error && leadResult.data) {
-      leadId = String(leadResult.data.id);
-    }
-
-    const contactResult = await supabase
-      .from("contact_requests")
-      .insert({
-        full_name: parsed.data.name,
-        company_name: parsed.data.businessType,
-        email: parsed.data.email || `${parsed.data.phone.replace(/[^0-9+]/g, "")}@phone.houseofdev.local`,
-        phone: parsed.data.phone,
-        industry: parsed.data.businessType,
-        budget: parsed.data.budget || parsed.data.selectedPackage || "Not selected",
-        service_required: parsed.data.selectedPackage || "Website enquiry",
-        message: parsed.data.message,
-        source: "homepage-local-business",
-        status: "new",
-      })
-      .select("id")
-      .maybeSingle();
-
-    if (!contactResult.error && contactResult.data) {
-      contactRequestId = String(contactResult.data.id);
-    }
-
-    if (leadResult.error && contactResult.error) {
-      return {
-        ok: false,
-        message: "We could not store the enquiry. Please WhatsApp us if this is urgent.",
-      };
-    }
-
-    await recordActivityLog({
-      email: parsed.data.email || undefined,
-      eventType: "local_lead_submitted",
-      metadata: {
-        leadId,
-        contactRequestId,
-        businessType: parsed.data.businessType,
-        selectedPackage: parsed.data.selectedPackage || null,
-      },
-    });
-  }
-
-  const notificationText = [
-    "New HouseOfDev local business enquiry",
-    `Name: ${parsed.data.name}`,
-    `Business type: ${parsed.data.businessType}`,
-    `Phone: ${parsed.data.phone}`,
-    `Email: ${parsed.data.email || "-"}`,
-    `Package: ${parsed.data.selectedPackage || "-"}`,
-    `Budget: ${parsed.data.budget || "-"}`,
-    `Message: ${parsed.data.message}`,
-  ].join("\n");
-  const notificationResults = await sendLeadNotifications({
-    subject: `New HouseOfDev enquiry - ${parsed.data.businessType}`,
-    html: `<h2 style="font-family:Inter,Arial,sans-serif;color:#0f172a">New local business enquiry</h2><table style="border-collapse:collapse;font-family:Inter,Arial,sans-serif">${rows({
-      Name: parsed.data.name,
-      "Business Type": parsed.data.businessType,
-      Phone: parsed.data.phone,
-      Email: parsed.data.email || "-",
-      Package: parsed.data.selectedPackage || "-",
-      Budget: parsed.data.budget || "-",
-      Message: parsed.data.message,
-    })}</table>`,
-    text: notificationText,
-  });
-
-  await recordNotificationEvents({
-    relatedTable: leadId ? "leads" : "contact_requests",
-    relatedId: leadId || contactRequestId,
-    eventType: "local_lead_submitted",
-    results: notificationResults,
-  });
-
-  const notified = notificationResults.some((result) => result.sent);
-
-  return {
-    ok: true,
-    message:
-      supabase || notified
-        ? "Thanks. Your enquiry is received. We will suggest the right website package shortly."
-        : "Thanks. Your enquiry is prepared. Please WhatsApp us too if this is urgent.",
   };
 }
 

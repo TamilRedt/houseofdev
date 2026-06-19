@@ -167,8 +167,8 @@ export function AdminOperationsDashboard({
 
             <section id="access" className="mt-6 scroll-mt-28">
               <AdminCredentialManager
-                requests={dashboard.credentialRequests}
-                users={dashboard.credentialUsers}
+                requests={dashboard.credentialRequests ?? []}
+                users={dashboard.credentialUsers ?? []}
                 canCreateAdmin={dashboard.profile?.role === "super_admin"}
               />
             </section>
