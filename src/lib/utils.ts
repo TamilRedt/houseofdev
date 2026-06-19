@@ -5,10 +5,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const productionSiteUrl = "https://houseofdev.online";
+
+export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || productionSiteUrl)
+  .replace(/\/$/, "")
+  .replace(/^https:\/\/www\.houseofdev\.online$/i, productionSiteUrl);
+
 export function absoluteUrl(path = "") {
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://www.houseofdev.online";
-  return `${base.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${siteUrl}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export function slugify(value: string) {
