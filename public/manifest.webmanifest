@@ -9,13 +9,13 @@
   "theme_color": "#172A46",
   "icons": [
     {
-      "src": "/brand/houseofdev-mark.svg",
+      "src": "/favicon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon.svg",
+      "src": "/brand/houseofdev-mark.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
