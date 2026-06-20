@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { absoluteUrl, siteUrl } from "@/lib/utils";
 
 const brandName = "House Of Dev";
-const brandMarkPath = "/brand/houseofdev-mark.svg";
+const faviconPath = "/favicon.svg";
+const brandLogoPath = "/brand/houseofdev-logo-horizontal.svg";
 const defaultTitle = "House Of Dev | Websites & AI Automation for Local Businesses";
 const defaultDescription =
   "House Of Dev helps local businesses move online and grow through professional websites, dashboards, booking systems, business automation, and AI-powered workflows.";
@@ -45,9 +46,9 @@ export function createMetadata({
       canonical: url,
     },
     icons: {
-      icon: [{ url: brandMarkPath, type: "image/svg+xml", sizes: "any" }],
-      shortcut: [brandMarkPath],
-      apple: [{ url: brandMarkPath, type: "image/svg+xml", sizes: "512x512" }],
+      icon: [{ url: faviconPath, type: "image/svg+xml", sizes: "any" }],
+      shortcut: [faviconPath],
+      apple: [{ url: faviconPath, type: "image/svg+xml", sizes: "512x512" }],
     },
     manifest: "/manifest.webmanifest",
     openGraph: {
@@ -88,10 +89,10 @@ export function createMetadata({
 
 const brandLogo = {
   "@type": "ImageObject",
-  url: absoluteUrl(brandMarkPath),
-  contentUrl: absoluteUrl(brandMarkPath),
-  width: 512,
-  height: 512,
+  url: absoluteUrl(brandLogoPath),
+  contentUrl: absoluteUrl(brandLogoPath),
+  width: 920,
+  height: 321,
   caption: "House Of Dev logo",
 };
 
