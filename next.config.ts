@@ -13,21 +13,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  async redirects() {
-    return [
-      {
-        source: "/:path*",
-        has: [
-          {
-            type: "host",
-            value: "www.houseofdev.online",
-          },
-        ],
-        destination: "https://houseofdev.online/:path*",
-        permanent: true,
-      },
-    ];
-  },
   async headers() {
     return [
       {
