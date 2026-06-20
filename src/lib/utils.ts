@@ -5,11 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-const productionSiteUrl = "https://houseofdev.online";
+const productionSiteUrl = "https://www.houseofdev.online";
 
 export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || productionSiteUrl)
   .replace(/\/$/, "")
-  .replace(/^https:\/\/www\.houseofdev\.online$/i, productionSiteUrl);
+  .replace(/^https:\/\/houseofdev\.online$/i, productionSiteUrl);
 
 export function absoluteUrl(path = "") {
   return `${siteUrl}${path.startsWith("/") ? path : `/${path}`}`;
