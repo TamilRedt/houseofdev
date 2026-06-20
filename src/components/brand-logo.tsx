@@ -7,7 +7,7 @@ type BrandLogoProps = {
 export function HouseOfDevMark({ className = "h-10 w-10" }: { className?: string }) {
   return (
     <img
-      src="/brand/houseofdev-mark.svg"
+      src="/favicon.svg"
       alt=""
       width={512}
       height={512}
@@ -31,15 +31,19 @@ export function BrandLogo({ compact = false, inverted = false, className = "" }:
 
   return (
     <span
-      className={`inline-flex min-w-0 items-center ${inverted ? "rounded-xl bg-[#F4F0E6] px-2 py-1.5 shadow-sm" : ""} ${className}`}
+      className={`inline-flex min-w-0 items-center gap-3 ${
+        inverted ? "rounded-xl bg-[#F4F0E6] px-2.5 py-2 shadow-sm" : ""
+      } ${className}`}
     >
-      <img
-        src="/brand/houseofdev-logo-horizontal.svg"
-        alt="House Of Dev — Local Business Transition, Growth, Value"
-        width={920}
-        height={321}
-        className="h-11 w-auto max-w-[220px] object-contain sm:h-12 sm:max-w-[250px]"
-      />
+      <HouseOfDevMark className="h-11 w-11 sm:h-12 sm:w-12" />
+      <span className="min-w-0 leading-none text-[#172A46]">
+        <span className="block whitespace-nowrap text-[17px] font-black tracking-[0.08em] sm:text-xl">
+          HOUSE OF DEV
+        </span>
+        <span className="mt-1 hidden whitespace-nowrap text-[8px] font-bold uppercase tracking-[0.18em] text-[#172A46]/70 sm:block">
+          Local Business Transition · Growth · Value
+        </span>
+      </span>
     </span>
   );
 }
