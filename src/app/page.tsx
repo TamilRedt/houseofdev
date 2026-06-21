@@ -1,4 +1,4 @@
-import { NeonReferenceHome } from "@/components/neon-reference-home";
+import { NeonHome } from "@/components/neon-home";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
@@ -20,5 +20,5 @@ export const metadata = createMetadata({
 });
 
 export default function Home() {
-  return <NeonReferenceHome />;
+  return <NeonHome />;
 }
