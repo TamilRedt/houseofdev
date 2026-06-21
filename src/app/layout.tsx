@@ -8,6 +8,7 @@ import {
   websiteJsonLd,
 } from "@/lib/seo";
 import "./globals.css";
+import "./visual-upgrade.css";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
