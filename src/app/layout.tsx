@@ -9,6 +9,7 @@ import {
 } from "@/lib/seo";
 import "./globals.css";
 import "./visual-upgrade.css";
+import "./neon-reference.css";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
