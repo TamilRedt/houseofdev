@@ -1,19 +1,14 @@
-import { About } from "@/components/about";
-import { Contact } from "@/components/contact";
-import { DimensionLab } from "@/components/dimension-lab";
-import { Hero } from "@/components/hero";
-import { Projects } from "@/components/projects";
-import { Services } from "@/components/services";
-import { Skills } from "@/components/skills";
+import { NeonReferenceHome } from "@/components/neon-reference-home";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "House Of Dev — Business Websites, Dashboards & AI Automation",
+  title: "House Of Dev — 3D Digital Systems Studio",
   description:
-    "House Of Dev builds modern websites, admin dashboards, client portals, and AI automation systems for local businesses in India. Full-stack, production-ready digital solutions.",
+    "House Of Dev builds cinematic business websites, admin dashboards, client portals, and AI automation systems for local businesses in India.",
   path: "/",
   keywords: [
     "House Of Dev",
+    "3D website design India",
     "Business Websites India",
     "Admin Dashboard Development",
     "Client Portal",
@@ -25,15 +20,5 @@ export const metadata = createMetadata({
 });
 
 export default function Home() {
-  return (
-    <>
-      <Hero />
-      <About />
-      <Skills />
-      <Services />
-      <DimensionLab />
-      <Projects />
-      <Contact />
-    </>
-  );
+  return <NeonReferenceHome />;
 }
