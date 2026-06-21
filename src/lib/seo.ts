@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { absoluteUrl, siteUrl } from "@/lib/utils";
 
 const brandName = "House Of Dev";
-const faviconPath = "/favicon.svg";
+const faviconPath = "/favicon-v2.svg";
 const brandLogoPath = "/brand/houseofdev-logo-horizontal.svg";
 const defaultTitle = "House Of Dev | Websites & AI Automation for Local Businesses";
 const defaultDescription =
