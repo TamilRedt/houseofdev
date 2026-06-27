@@ -1,24 +1,23 @@
-import { NeonHome } from "@/components/neon-home";
+import { UploadedMotionHome } from "@/components/uploaded-motion-home";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata = createMetadata({
-  title: "House Of Dev — 3D Digital Systems Studio",
+  title: "House Of Dev — Ultra Reactive Website UI",
   description:
-    "House Of Dev builds cinematic business websites, admin dashboards, client portals, and AI automation systems for local businesses in India.",
+    "House Of Dev builds business websites, motion interfaces, dashboards, client portals, and automation systems for local businesses.",
   path: "/",
   keywords: [
     "House Of Dev",
-    "3D website design India",
-    "Business Websites India",
-    "Admin Dashboard Development",
-    "Client Portal",
-    "AI Automation",
-    "Next.js Developer India",
-    "Supabase Development",
-    "Local Business Digital Transformation",
+    "business website design",
+    "motion website UI",
+    "admin dashboard development",
+    "client portal",
+    "automation systems",
+    "Next.js developer",
+    "Supabase development",
   ],
 });
 
 export default function Home() {
-  return <NeonHome />;
+  return <UploadedMotionHome />;
 }
