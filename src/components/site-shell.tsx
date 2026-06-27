@@ -15,17 +15,19 @@ function isWorkspaceRoute(pathname: string) {
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isWorkspace = isWorkspaceRoute(pathname);
+  const isImmersiveHome = pathname === "/";
+  const hideShell = isWorkspace || isImmersiveHome;
 
   return (
     <>
-      {!isWorkspace ? (
+      {!hideShell ? (
         <>
           <SiteEngagementLayer />
           <SiteHeader />
         </>
       ) : null}
       <PageTransition>{children}</PageTransition>
-      {!isWorkspace ? <SiteFooter /> : null}
+      {!hideShell ? <SiteFooter /> : null}
     </>
   );
 }
